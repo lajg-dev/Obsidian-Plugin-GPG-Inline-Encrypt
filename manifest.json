@@ -1,0 +1,11 @@
+{
+	"id": "gpg-inline-encrypt",
+	"name": "GPG Inline Encrypt",
+	"version": "1.0.0",
+	"minAppVersion": "0.15.0",
+	"description": "GPG encrypt inline text using hotkeys",
+	"author": "lajg.dev",
+	"authorUrl": "https://lajg.dev",
+	"fundingUrl": "https://lajg.dev/gpg-inline-encrypt",
+	"isDesktopOnly": false
+}
