@@ -1,11 +1,11 @@
 {
-	"id": "gpg-inline-encrypt",
-	"name": "GPG Inline Encrypt",
+	"id": "gpg-encrypt",
+	"name": "GPG Encrypt",
 	"version": "1.0.0",
 	"minAppVersion": "0.15.0",
 	"description": "GPG encrypt inline text using hotkeys",
 	"author": "lajg.dev",
-	"authorUrl": "https://lajg.dev",
-	"fundingUrl": "https://lajg.dev/gpg-inline-encrypt",
+	"authorUrl": "https://www.lajg.dev/obsidian-plugin-gpg-inline-encrypt/",
+	"fundingUrl": "https://www.lajg.dev/donate/",
 	"isDesktopOnly": false
 }
