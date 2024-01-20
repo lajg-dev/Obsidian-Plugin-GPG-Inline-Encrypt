@@ -1,6 +1,6 @@
 import { App, PluginSettingTab, Setting } from 'obsidian';
 import MyPlugin from 'main';
-import spawnGPG, { GpgResult } from 'gpg';
+import spawnGPG, { GpgResult, getListPublicKey } from 'gpg';
 let fs = require('fs');
 
 // Enum of types of GPG executable path status
@@ -27,6 +27,7 @@ export class GpgSettingsTab extends PluginSettingTab {
 	// List of settings objetcts
 	private gpgExecPath: Setting;
 	private gpgExecPathStatus: HTMLDivElement;
+	private gpgPublicKeysList: Setting;
     // Display function in settings tabs
 	display(): void {
 		// Container Element
@@ -46,17 +47,25 @@ export class GpgSettingsTab extends PluginSettingTab {
 				}));
 		// Div to show GPG Path status
 		this.gpgExecPathStatus = this.gpgExecPath.descEl.createDiv();
-		// Run by first time checkGpgPath function
-		this.checkGpgPath(this.plugin.settings.pgpExecPath);
 		// ---------- GPG executable setting ----------
 
+		// ---------- List of GPG Public Keys ----------
+		this.gpgPublicKeysList = new Setting(containerEl)
+			.setName("Public Keys")
+		// Run by first time checkGpgPath function
+		this.checkGpgPath(this.plugin.settings.pgpExecPath);
+		// ---------- List of GPG Public Keys ----------
+
 		// ---------- Another setting ----------
-		// 
+		//
 		// ---------- Another setting ----------
+		
 	}
 
 	// Function to check if GPG Path exits
 	private async checkGpgPath(value: string) {
+		// Hide list of public GPG Keys
+		this.gpgPublicKeysList.settingEl.hide();
 		// Start with Loading status while real one is calculated
 		this.changeGpgPathStatus(GpgExecPathStatus.LOADING);
 		// Start a try in case of exception
@@ -90,6 +99,8 @@ export class GpgSettingsTab extends PluginSettingTab {
 					this.plugin.settings.pgpExecPath = value;
 					// Save settings with change
 					await this.plugin.saveSettings();
+					// Refresh GPG public key list
+					await this.RefreshGpgPublicKeyList();
 					// End this check process
 					return;
 				// In case of words gpg or GnuPG are not include in output
@@ -157,5 +168,27 @@ export class GpgSettingsTab extends PluginSettingTab {
 				this.gpgExecPathStatus.className = "text-color-red";
 				break;
 		}
+	}
+
+	// Function to refresh list of GPG Public Keys
+	private async RefreshGpgPublicKeyList() {
+		// Get list of GPG public Keys
+		let gpgPublicKeys: { keyID: string; userID: string }[] = await getListPublicKey(this.plugin.settings.pgpExecPath);
+		// Iterate over each sub-element in list
+		while (this.gpgPublicKeysList.descEl.firstChild) {
+			// Remove each sub-element in list to clear list
+			this.gpgPublicKeysList.descEl.removeChild(this.gpgPublicKeysList.descEl.firstChild);
+		}
+		// Add description in element
+		this.gpgPublicKeysList.setDesc("List of GPG public keys");
+		// Add spacer element to separate title/description and list of public keys
+		this.gpgPublicKeysList.descEl.createDiv().className = "div-spacer";
+		// Iterate over each public key
+		gpgPublicKeys.forEach((gpgPublicKey) => {
+			// Add public key as new element in list
+			this.gpgPublicKeysList.descEl.createDiv().setText("- " + gpgPublicKey.userID);
+		});
+		// Show list of public GPG Keys
+		this.gpgPublicKeysList.settingEl.show();
 	}
 }

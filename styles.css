@@ -16,3 +16,6 @@ If your plugin does not need CSS, delete this file.
 .text-color-red {
     color: red;
 }
+.div-spacer {
+    height: 20px;
+}
