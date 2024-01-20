@@ -9,45 +9,55 @@ export interface GpgResult {
 
 export default function spawnGPG(exec: string,  input: string | Buffer | null, args?: string[]): Promise<GpgResult> {
     return new Promise((resolve, reject) => {
-      if (!args) {
-        args = [];
-      }
-
-      const buffers: Buffer[] = [];
-      let buffersLength = 0;
-      let error = "";
-      const gpg = spawn(exec, globalArgs.concat(args));
-  
-      gpg.stdout.on("data", (buf: Buffer) => {
-        buffers.push(buf);
-        buffersLength += buf.length;
-      });
-  
-      gpg.stderr.on("data", (buf: Buffer) => {
-        error += buf.toString("utf8");
-      });
-  
-      gpg.on("close", (code: number) => {
-        const msg = Buffer.concat(buffers, buffersLength);
-        if (code !== 0) {
-          reject(new Error(error || msg.toString()));
-          return;
+      try {
+        if (!args) {
+          args = [];
         }
-        resolve({
-          result: msg,
-          error: error.length > 0 ? new Error(error) : undefined
+
+        const buffers: Buffer[] = [];
+        let buffersLength = 0;
+        let error = "";
+        const gpg = spawn(exec, globalArgs.concat(args));
+    
+        gpg.stdout.on("data", (buf: Buffer) => {
+          buffers.push(buf);
+          buffersLength += buf.length;
         });
-      });
-  
-      gpg.on("error", (err: any) => {
+    
+        gpg.stderr.on("data", (buf: Buffer) => {
+          error += buf.toString("utf8");
+        });
+    
+        gpg.on("close", (code: number) => {
+          const msg = Buffer.concat(buffers, buffersLength);
+          if (code !== 0) {
+            resolve({
+              result: undefined,
+              error: new Error(error || msg.toString())
+            });
+          }
+          resolve({
+            result: msg,
+            error: error.length > 0 ? new Error(error) : undefined
+          });
+        });
+    
+        gpg.on("error", (err: any) => {
+          resolve({
+            result: undefined,
+            error: err
+          });
+        });
+
+        if (input) {
+          gpg.stdin.end(input);
+        }
+      }
+      catch (ex) {
         resolve({
           result: undefined,
-          error: err
+          error: ex
         });
-      });
-
-      if (input) {
-        gpg.stdin.end(input);
       }
     });
 }
@@ -112,7 +122,12 @@ export async function gpgEncrypt(exec: string, plainText:string, publicKeyIds: s
   });
   // Build the executable and args
   const gpgResult: GpgResult  = await spawnGPG(exec, plainText, args);
-  // Check if result are null
+  // Check if error is null
+  if(!gpgResult.error) {
+    // Return with error message
+    return gpgResult;
+  }
+  // Check if result is null
   if(!gpgResult.result) {
     // And return with error message
     return {
