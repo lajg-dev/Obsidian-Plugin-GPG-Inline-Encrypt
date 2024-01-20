@@ -1,5 +1,5 @@
 import spawnGPG, { GpgResult, getListPublicKey } from 'gpg';
-import { App, PluginSettingTab, Setting } from 'obsidian';
+import { App, DropdownComponent, PluginSettingTab, Setting } from 'obsidian';
 import GpgEncryptPlugin from 'main';
 let fs = require('fs');
 
@@ -27,6 +27,7 @@ export class GpgSettingsTab extends PluginSettingTab {
 	private gpgExecPath: Setting;
 	private gpgExecPathStatus: HTMLDivElement;
 	private gpgPublicKeysList: Setting;
+	private gpgSignKeyId: Setting;
     // Display function in settings tabs
 	display(): void {
 		// Container Element
@@ -54,6 +55,27 @@ export class GpgSettingsTab extends PluginSettingTab {
 		// Run by first time checkGpgPath function
 		this.checkGpgPath(this.plugin.settings.pgpExecPath);
 		// ---------- List of GPG Public Keys ----------
+
+		// ---------- Sign text ----------
+		new Setting(containerEl)
+			.setName("Sign encrypted text")
+			.setDesc("Sign the encrypted text with GPG")
+			.addToggle((toggle) => {
+				// Toggle component default value is false
+				toggle.setValue(this.plugin.settings.pgpRequireSign);
+				// Toggle component is created with onChange event
+				toggle.onChange((value: boolean) => {
+					// Call method to refresh list to Sign text
+					this.RefreshListSign(value);
+				});
+			});
+		// ---------- Sign text ----------
+
+		// ---------- GPG Key ID to Sign text ----------
+		this.gpgSignKeyId = new Setting(containerEl);
+		// Call method to refresh list to Sign text
+		this.RefreshListSign(this.plugin.settings.pgpRequireSign);
+		// ---------- GPG Key ID to Sign text ----------
 	}
 
 	// Function to check if GPG Path exits
@@ -184,5 +206,44 @@ export class GpgSettingsTab extends PluginSettingTab {
 		});
 		// Show list of public GPG Keys
 		this.gpgPublicKeysList.settingEl.show();
+	}
+
+	// Function to refresh List of Sign Keys ID
+	private async RefreshListSign(requireSign: boolean) {
+		// Set settig variable pgpRequireSign with new value
+		this.plugin.settings.pgpRequireSign = requireSign;
+		// Save settings with change
+		await this.plugin.saveSettings();
+		// Clear gpgSignKeyId setting
+		this.gpgSignKeyId.clear();
+		// Re-Create gpgSignKeyId setting
+		this.gpgSignKeyId.setName("GPG key to sign");
+		this.gpgSignKeyId.setDesc("GPG key to sign the encrypted text");
+		// Show or Hide gpgSignKeyId settings according requireSign flag
+		requireSign ? this.gpgSignKeyId.settingEl.show() : this.gpgSignKeyId.settingEl.hide();
+		// Check ir requireSign to populate DropDown
+		if (requireSign) {
+			// Get list of GPG public Keys
+			let gpgPublicKeys: { keyID: string; userID: string }[] = await getListPublicKey(this.plugin.settings.pgpExecPath);
+			// Clear all DropDown items
+			this.gpgSignKeyId.addDropdown(dropDown => {
+				// Add empty key as new element in list
+				dropDown.addOption("0", "Select a key to sign")
+				// Iterate over each public key
+				gpgPublicKeys.forEach((gpgPublicKey) => {
+					// Add public key as new element in list
+					dropDown.addOption(gpgPublicKey.keyID, "(" + gpgPublicKey.keyID + ") " + gpgPublicKey.userID)
+				});
+				// DropDown component onChange event
+				dropDown.onChange(async (value: string) => {
+					// Set settig variable pgpSignPublicKeyId with new value
+					this.plugin.settings.pgpSignPublicKeyId = value;
+					// Save settings with change
+					await this.plugin.saveSettings();
+				});
+				// Select as default 0=Select a key to sign
+				dropDown.setValue(this.plugin.settings.pgpSignPublicKeyId);
+			});
+		}
 	}
 }

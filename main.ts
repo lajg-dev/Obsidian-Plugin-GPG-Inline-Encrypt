@@ -4,10 +4,14 @@ import { Plugin } from 'obsidian';
 
 interface GpgEncryptSettings {
 	pgpExecPath: string;
+	pgpRequireSign: boolean;
+	pgpSignPublicKeyId: string
 }
 
 const DEFAULT_SETTINGS: GpgEncryptSettings = {
-	pgpExecPath: '/usr/local/bin/gpg'
+	pgpExecPath: '/usr/local/bin/gpg',
+	pgpRequireSign: false,
+	pgpSignPublicKeyId: "0"
 }
 
 export default class GpgEncryptPlugin extends Plugin {
