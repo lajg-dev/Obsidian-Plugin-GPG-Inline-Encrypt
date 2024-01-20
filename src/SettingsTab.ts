@@ -1,6 +1,6 @@
 import spawnGPG, { GpgResult, getListPublicKey } from 'gpg';
 import { App, PluginSettingTab, Setting } from 'obsidian';
-import MyPlugin from 'main';
+import GpgEncryptPlugin from 'main';
 let fs = require('fs');
 
 // Enum of types of GPG executable path status
@@ -17,9 +17,9 @@ enum GpgExecPathStatus {
 // GPG Settings Tab Class
 export class GpgSettingsTab extends PluginSettingTab {
     // Current plugin instance
-	plugin: MyPlugin;
-    // Constructor with App and MyPlugin
-	constructor(app: App, plugin: MyPlugin) {
+	plugin: GpgEncryptPlugin;
+    // Constructor with App and GpgEncryptPlugin
+	constructor(app: App, plugin: GpgEncryptPlugin) {
 		super(app, plugin);
 		this.plugin = plugin;
 	}

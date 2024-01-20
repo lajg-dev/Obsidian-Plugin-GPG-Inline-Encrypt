@@ -1,19 +1,17 @@
-import { App, Modal, Notice, Plugin } from 'obsidian';
 import { GpgSettingsTab } from 'src/SettingsTab';
 import { HotKeys } from 'src/HotKeys';
+import { Plugin } from 'obsidian';
 
-// Remember to rename these classes and interfaces!
-
-interface MyPluginSettings {
+interface GpgEncryptSettings {
 	pgpExecPath: string;
 }
 
-const DEFAULT_SETTINGS: MyPluginSettings = {
+const DEFAULT_SETTINGS: GpgEncryptSettings = {
 	pgpExecPath: '/usr/local/bin/gpg'
 }
 
-export default class MyPlugin extends Plugin {
-	settings: MyPluginSettings;
+export default class GpgEncryptPlugin extends Plugin {
+	settings: GpgEncryptSettings;
 
 	async onload() {
 		// Load settings variables
@@ -23,29 +21,9 @@ export default class MyPlugin extends Plugin {
 		this.addSettingTab(new GpgSettingsTab(this.app, this));
 
 		// Add hotkeys
-		this.addCommand(HotKeys.GpgEncryptInline);
-		this.addCommand(HotKeys.GpgEncryptDocument);
-
-		// This creates an icon in the left ribbon.
-		const ribbonIconEl = this.addRibbonIcon('dice', 'Sample Plugin', (evt: MouseEvent) => {
-			// Called when the user clicks the icon.
-			new Notice('This is a notice!');
-		});
-		// Perform additional things with the ribbon
-		ribbonIconEl.addClass('my-plugin-ribbon-class');
-
-		// This adds a status bar item to the bottom of the app. Does not work on mobile apps.
-		const statusBarItemEl = this.addStatusBarItem();
-		statusBarItemEl.setText('Status Bar Text');
-
-		// If the plugin hooks up any global DOM events (on parts of the app that doesn't belong to this plugin)
-		// Using this function will automatically remove the event listener when this plugin is disabled.
-		this.registerDomEvent(document, 'click', (evt: MouseEvent) => {
-			console.log('click', evt);
-		});
-
-		// When registering intervals, this function will automatically clear the interval when the plugin is disabled.
-		this.registerInterval(window.setInterval(() => console.log('setInterval'), 5 * 60 * 1000));
+		let hotKeys: HotKeys = new HotKeys(this.app, this);
+		this.addCommand(hotKeys.GpgEncryptInline);
+		this.addCommand(hotKeys.GpgEncryptDocument);
 	}
 
 	onunload() {
@@ -58,21 +36,5 @@ export default class MyPlugin extends Plugin {
 
 	async saveSettings() {
 		await this.saveData(this.settings);
-	}
-}
-
-class SampleModal extends Modal {
-	constructor(app: App) {
-		super(app);
-	}
-
-	onOpen() {
-		const {contentEl} = this;
-		contentEl.setText('Woah!');
-	}
-
-	onClose() {
-		const {contentEl} = this;
-		contentEl.empty();
 	}
 }

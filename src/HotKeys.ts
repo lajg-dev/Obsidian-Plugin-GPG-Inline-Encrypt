@@ -1,21 +1,36 @@
-import { Command } from "obsidian";
+import { EncryptModal, EncryptModalMode } from "./EncryptModal";
+import { App, Command, Editor, MarkdownView } from "obsidian";
+import GpgEncryptPlugin from 'main';
 
 // HotKeys class
 export class HotKeys {
+    // Current app instance
+    private app: App;
+    // Current plugin instance
+	plugin: GpgEncryptPlugin;
+    // Constructor with App and GpgEncryptPlugin
+	constructor(app: App, plugin: GpgEncryptPlugin) {
+		this.app = app;
+        this.plugin = plugin;
+	}
     // HotKey to Encrypt Inline
-    public static GpgEncryptInline: Command = {
+    public GpgEncryptInline: Command = {
         id: 'gpg-encrypt-inline',
         name: 'GPG encrypt inline',
-        callback: () => {
-            // todo: link modal to encrypt inline
+        icon: 'lock',
+        editorCallback: (editor: Editor, view: MarkdownView) => {
+            // Open Encrypt Modal in mode InLine
+            new EncryptModal(this.app, this.plugin, EncryptModalMode.INLINE, editor, view).open();
         }
     };
     // HotKey to Encrypt Document
-    public static GpgEncryptDocument: Command = {
+    public GpgEncryptDocument: Command = {
         id: 'gpg-encrypt-document',
         name: 'GPG encrypt document',
-        callback: () => {
-            // todo: link modal to encrypt document
+        icon: 'lock',
+        editorCallback: (editor: Editor, view: MarkdownView) => {
+            // Open Encrypt Modal in mode Document
+            new EncryptModal(this.app, this.plugin, EncryptModalMode.DOCUMENT, editor, view).open();
         }
     };
 }
