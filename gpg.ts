@@ -87,3 +87,37 @@ export async function getListPublicKey(exec: string): Promise<{ keyID: string; u
   // Return keys
   return keys;
 }
+
+// Function to encrypt a plainText with a list of GPG public keys ID
+export async function gpgEncrypt(exec: string, plainText:string, publicKeyIds: string[]): Promise<GpgResult> {
+  // Check if at least one public key is selected
+  if (publicKeyIds.length <= 0) {
+    // And return with error message
+    return {
+      result: undefined,
+      error: new Error("❌ Select at least one key")
+    };
+  }
+  // List of Args before publicKeyIds
+  let args: string[] = ["--encrypt", "--armor"];
+  // Iterate over each GPG public key ID
+  publicKeyIds.forEach((publicKey) => {
+    // Add to args this recipient GPG public key ID
+    args = args.concat(["--recipient", publicKey]);
+  });
+  // Build the executable and args
+  const gpgResult: GpgResult  = await spawnGPG(exec, plainText, args);
+  // Check if result are null
+  if(!gpgResult.result) {
+    // And return with error message
+    return {
+      result: undefined,
+      error: new Error("❌ Encrypt failed, result is empty")
+    };
+  }
+  // Send resposnse with encripted text
+  return {
+    result: gpgResult.result,
+    error: undefined
+  };
+}

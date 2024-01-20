@@ -1,4 +1,4 @@
-import { getListPublicKey } from "gpg";
+import { GpgResult, getListPublicKey, gpgEncrypt } from "gpg";
 import { App, Editor, MarkdownView, Modal, Notice, Setting } from "obsidian";
 import GpgEncryptPlugin from 'main';
 
@@ -75,9 +75,9 @@ export class EncryptModal extends Modal {
             });
 		});
         // Button to encript text
-        new Setting(contentEl).addButton((btn) => btn.setButtonText("Encrypt").setCta().onClick(() => {
+        new Setting(contentEl).addButton((btn) => btn.setButtonText("Encrypt").setCta().onClick(async() => {
             // Call to Encrypt Text Method
-            this.EncryptText();
+            await this.EncryptText();
         }));
 	}
     // OnClose Method
@@ -88,7 +88,30 @@ export class EncryptModal extends Modal {
 		contentEl.empty();
 	}
     // Method to encript text with previous configuration
-    private EncryptText() {
-        console.log(this.listPublicKeyToEncrypt)
+    private async EncryptText() {
+        // Check if EncryptMode is Inline
+        if (this.encryptMode == EncryptModalMode.INLINE) {
+            // Send Encrypt command with list of GPG public keys IDs
+            let encryptedTextResult: GpgResult = await gpgEncrypt(this.plugin.settings.pgpExecPath, this.editor.getSelection(), this.listPublicKeyToEncrypt);
+            // Check if any error exists
+            if (encryptedTextResult.error) {
+                // Show the error message
+                new Notice(encryptedTextResult.error.message);
+            }
+            // In case of no error happend
+            else {
+                // Replace encrypted text in selection
+                this.editor.replaceSelection(encryptedTextResult.result!.toString().trim());
+                // Close this modal
+                this.close();
+            }
+        }
+        else if (this.encryptMode == EncryptModalMode.DOCUMENT) {
+
+            console.log(this.editor)
+            //gpgEncrypt(this.editor., this.listPublicKeyToEncrypt);
+        }
+        
+
     }
 }
