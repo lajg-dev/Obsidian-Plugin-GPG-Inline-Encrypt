@@ -1,18 +1,17 @@
+import spawnGPG, { GpgResult, getListPublicKey } from 'gpg';
 import { App, PluginSettingTab, Setting } from 'obsidian';
 import MyPlugin from 'main';
-import spawnGPG, { GpgResult, getListPublicKey } from 'gpg';
 let fs = require('fs');
 
 // Enum of types of GPG executable path status
 enum GpgExecPathStatus {
-	// In case of Loading message
-	LOADING = "Loading...",
 	OK = "Ok",
+	LOADING = "Loading...",
 	NO_GPG_IN_PATH = "GPG is not in this path",
-	NO_GPG_IN_OUTPUT = "The output does not indicate this is GPG",
+	UNKNOWN_ERROR = "An unknown error occurred",
 	FILE_NOT_FOUND = "File or directory not found",
-	NOT_PERMISSION = "Access to the executable file has been denied",
-	UNKNOWN_ERROR = "An unknown error occurred"
+	NO_GPG_IN_OUTPUT = "The output does not indicate this is GPG",
+	NOT_PERMISSION = "Access to the executable file has been denied"
 }
 
 // GPG Settings Tab Class
@@ -55,11 +54,6 @@ export class GpgSettingsTab extends PluginSettingTab {
 		// Run by first time checkGpgPath function
 		this.checkGpgPath(this.plugin.settings.pgpExecPath);
 		// ---------- List of GPG Public Keys ----------
-
-		// ---------- Another setting ----------
-		//
-		// ---------- Another setting ----------
-		
 	}
 
 	// Function to check if GPG Path exits
