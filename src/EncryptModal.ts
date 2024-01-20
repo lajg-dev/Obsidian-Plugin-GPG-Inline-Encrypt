@@ -10,6 +10,7 @@ export enum EncryptModalMode {
 
 // Encrypt modal (Works for inline and document encryption)
 export class EncryptModal extends Modal {
+
     // List of public keys to encript text
     private listPublicKeyToEncrypt: string[];
     // Encrypt modal mode
@@ -20,6 +21,7 @@ export class EncryptModal extends Modal {
     private view: MarkdownView;
     // Current plugin instance
 	plugin: GpgEncryptPlugin;
+
     // Constructor of modal encrypt
 	constructor(app: App, plugin: GpgEncryptPlugin, mode: EncryptModalMode, editor: Editor, view: MarkdownView) {
 		super(app);
@@ -29,6 +31,7 @@ export class EncryptModal extends Modal {
         this.view = view;
         this.listPublicKeyToEncrypt = [];
 	}
+
     // OnOpen Method
 	async onOpen() {
         // Get an instance of this Element
@@ -80,6 +83,7 @@ export class EncryptModal extends Modal {
             await this.EncryptText();
         }));
 	}
+
     // OnClose Method
 	onClose() {
         // Get an instance of this Element
@@ -87,12 +91,13 @@ export class EncryptModal extends Modal {
         // Clear element
 		contentEl.empty();
 	}
+
     // Method to encript text with previous configuration
     private async EncryptText() {
         // Check if EncryptMode is Inline
         if (this.encryptMode == EncryptModalMode.INLINE) {
             // Send Encrypt command with list of GPG public keys IDs
-            let encryptedTextResult: GpgResult = await gpgEncrypt(this.plugin.settings.pgpExecPath, this.editor.getSelection(), this.listPublicKeyToEncrypt);
+            let encryptedTextResult: GpgResult = await gpgEncrypt(this.plugin.settings.pgpExecPath, this.editor.getSelection(), this.listPublicKeyToEncrypt, this.plugin.settings.pgpSignPublicKeyId);
             // Check if any error exists
             if (encryptedTextResult.error) {
                 // Show the error message

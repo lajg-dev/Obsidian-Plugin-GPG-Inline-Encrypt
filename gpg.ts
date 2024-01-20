@@ -89,7 +89,7 @@ export async function getListPublicKey(exec: string): Promise<{ keyID: string; u
 }
 
 // Function to encrypt a plainText with a list of GPG public keys ID
-export async function gpgEncrypt(exec: string, plainText:string, publicKeyIds: string[]): Promise<GpgResult> {
+export async function gpgEncrypt(exec: string, plainText:string, publicKeyIds: string[], signPublicKeyId: string): Promise<GpgResult> {
   // Check if at least one public key is selected
   if (publicKeyIds.length <= 0) {
     // And return with error message
@@ -100,6 +100,11 @@ export async function gpgEncrypt(exec: string, plainText:string, publicKeyIds: s
   }
   // List of Args before publicKeyIds
   let args: string[] = ["--encrypt", "--armor"];
+  // Check if Sign is necesary in this encryption
+  if (signPublicKeyId != "0") {
+    // Add args to Sign with a key
+    args = args.concat(["--sign", "--local-user", signPublicKeyId]);
+  }
   // Iterate over each GPG public key ID
   publicKeyIds.forEach((publicKey) => {
     // Add to args this recipient GPG public key ID

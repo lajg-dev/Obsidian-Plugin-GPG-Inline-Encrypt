@@ -62,7 +62,7 @@ export class GpgSettingsTab extends PluginSettingTab {
 			.setDesc("Sign the encrypted text with GPG")
 			.addToggle((toggle) => {
 				// Toggle component default value is false
-				toggle.setValue(this.plugin.settings.pgpRequireSign);
+				toggle.setValue(this.plugin.settings.pgpSignPublicKeyId != "0");
 				// Toggle component is created with onChange event
 				toggle.onChange((value: boolean) => {
 					// Call method to refresh list to Sign text
@@ -74,7 +74,7 @@ export class GpgSettingsTab extends PluginSettingTab {
 		// ---------- GPG Key ID to Sign text ----------
 		this.gpgSignKeyId = new Setting(containerEl);
 		// Call method to refresh list to Sign text
-		this.RefreshListSign(this.plugin.settings.pgpRequireSign);
+		this.RefreshListSign(this.plugin.settings.pgpSignPublicKeyId != "0");
 		// ---------- GPG Key ID to Sign text ----------
 	}
 
@@ -210,10 +210,6 @@ export class GpgSettingsTab extends PluginSettingTab {
 
 	// Function to refresh List of Sign Keys ID
 	private async RefreshListSign(requireSign: boolean) {
-		// Set settig variable pgpRequireSign with new value
-		this.plugin.settings.pgpRequireSign = requireSign;
-		// Save settings with change
-		await this.plugin.saveSettings();
 		// Clear gpgSignKeyId setting
 		this.gpgSignKeyId.clear();
 		// Re-Create gpgSignKeyId setting
