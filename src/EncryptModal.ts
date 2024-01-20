@@ -1,5 +1,5 @@
 import { getListPublicKey } from "gpg";
-import { App, Editor, MarkdownView, Modal, Notice } from "obsidian";
+import { App, Editor, MarkdownView, Modal, Notice, Setting } from "obsidian";
 import GpgEncryptPlugin from 'main';
 
 // Enum to identify encrypt modal mode
@@ -10,6 +10,8 @@ export enum EncryptModalMode {
 
 // Encrypt modal (Works for inline and document encryption)
 export class EncryptModal extends Modal {
+    // List of public keys to encript text
+    private listPublicKeyToEncrypt: string[];
     // Encrypt modal mode
     private encryptMode: EncryptModalMode;
     // Editor
@@ -25,6 +27,7 @@ export class EncryptModal extends Modal {
         this.encryptMode = mode;
         this.editor = editor;
         this.view = view;
+        this.listPublicKeyToEncrypt = [];
 	}
     // OnOpen Method
 	async onOpen() {
@@ -53,9 +56,29 @@ export class EncryptModal extends Modal {
         // Iterate over each public key
 		gpgPublicKeys.forEach((gpgPublicKey) => {
 			// Add public key as new element in list
-
+            new Setting(contentEl).setName("(" + gpgPublicKey.keyID + ") " + gpgPublicKey.userID).addToggle((toggle) => {
+                // Toggle component default value is false
+                toggle.setValue(false);
+                // Toggle component is created with onChange event
+                toggle.onChange((value: boolean) => {
+                    // If Toggle is selected
+                    if (value) {
+                        // Add KeyID to listPublicKeyToEncrypt list
+                        this.listPublicKeyToEncrypt.push(gpgPublicKey.keyID);
+                    }
+                    // If Toggle is unselected
+                    else {
+                        // Remove KeyID to listPublicKeyToEncrypt list
+                        this.listPublicKeyToEncrypt.remove(gpgPublicKey.keyID);
+                    }
+                });
+            });
 		});
-
+        // Button to encript text
+        new Setting(contentEl).addButton((btn) => btn.setButtonText("Encrypt").setCta().onClick(() => {
+            // Call to Encrypt Text Method
+            this.EncryptText();
+        }));
 	}
     // OnClose Method
 	onClose() {
@@ -64,4 +87,8 @@ export class EncryptModal extends Modal {
         // Clear element
 		contentEl.empty();
 	}
+    // Method to encript text with previous configuration
+    private EncryptText() {
+        console.log(this.listPublicKeyToEncrypt)
+    }
 }

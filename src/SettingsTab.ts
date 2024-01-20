@@ -180,7 +180,7 @@ export class GpgSettingsTab extends PluginSettingTab {
 		// Iterate over each public key
 		gpgPublicKeys.forEach((gpgPublicKey) => {
 			// Add public key as new element in list
-			this.gpgPublicKeysList.descEl.createDiv().setText("- " + gpgPublicKey.userID);
+			this.gpgPublicKeysList.descEl.createDiv().setText("- (" + gpgPublicKey.keyID + ") " + gpgPublicKey.userID);
 		});
 		// Show list of public GPG Keys
 		this.gpgPublicKeysList.settingEl.show();
