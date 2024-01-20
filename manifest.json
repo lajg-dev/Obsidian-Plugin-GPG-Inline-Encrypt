@@ -7,5 +7,5 @@
 	"author": "lajg.dev",
 	"authorUrl": "https://www.lajg.dev/obsidian-plugin-gpg-inline-encrypt/",
 	"fundingUrl": "https://www.lajg.dev/donate/",
-	"isDesktopOnly": false
+	"isDesktopOnly": true
 }
