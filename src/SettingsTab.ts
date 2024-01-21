@@ -1,6 +1,7 @@
 import spawnGPG, { GpgResult, getListPublicKey } from 'gpg';
 import { App, DropdownComponent, PluginSettingTab, Setting } from 'obsidian';
 import GpgEncryptPlugin from 'main';
+import { Settings } from './Settings';
 let fs = require('fs');
 
 // Enum of types of GPG executable path status
@@ -114,7 +115,7 @@ export class GpgSettingsTab extends PluginSettingTab {
 					// Set settig variable pgpExecPath with new value
 					this.plugin.settings.pgpExecPath = value;
 					// Save settings with change
-					await this.plugin.saveSettings();
+					await new Settings(this.plugin).saveSettings();
 					// Refresh GPG public key list
 					await this.RefreshGpgPublicKeyList();
 					// End this check process
@@ -235,7 +236,7 @@ export class GpgSettingsTab extends PluginSettingTab {
 					// Set settig variable pgpSignPublicKeyId with new value
 					this.plugin.settings.pgpSignPublicKeyId = value;
 					// Save settings with change
-					await this.plugin.saveSettings();
+					await new Settings(this.plugin).saveSettings();
 				});
 				// Select as default 0=Select a key to sign
 				dropDown.setValue(this.plugin.settings.pgpSignPublicKeyId);
@@ -246,7 +247,7 @@ export class GpgSettingsTab extends PluginSettingTab {
 			// Set settig variable pgpSignPublicKeyId with new value
 			this.plugin.settings.pgpSignPublicKeyId = "0";
 			// Save settings with change
-			await this.plugin.saveSettings();
+			await new Settings(this.plugin).saveSettings();
 		}
 	}
 }
