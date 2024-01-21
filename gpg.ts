@@ -123,7 +123,7 @@ export async function gpgEncrypt(exec: string, plainText:string, publicKeyIds: s
   // Build the executable and args
   const gpgResult: GpgResult  = await spawnGPG(exec, plainText, args);
   // Check if error is null
-  if(!gpgResult.error) {
+  if(gpgResult.error) {
     // Return with error message
     return gpgResult;
   }

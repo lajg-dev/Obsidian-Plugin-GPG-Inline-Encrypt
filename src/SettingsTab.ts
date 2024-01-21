@@ -241,5 +241,12 @@ export class GpgSettingsTab extends PluginSettingTab {
 				dropDown.setValue(this.plugin.settings.pgpSignPublicKeyId);
 			});
 		}
+		// In case of disable Sign
+		else {
+			// Set settig variable pgpSignPublicKeyId with new value
+			this.plugin.settings.pgpSignPublicKeyId = "0";
+			// Save settings with change
+			await this.plugin.saveSettings();
+		}
 	}
 }

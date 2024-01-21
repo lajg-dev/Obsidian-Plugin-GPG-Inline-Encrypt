@@ -56,6 +56,8 @@ export class EncryptModal extends Modal {
         contentEl.createEl("p", { text: "Select which Public GPG key(s) you want to be able to decrypt the text:" });
         // Get list of GPG public Keys
 		let gpgPublicKeys: { keyID: string; userID: string }[] = await getListPublicKey(this.plugin.settings.pgpExecPath);
+        // Sign key name by ID
+        let gpgSignName: string = "";
         // Iterate over each public key
 		gpgPublicKeys.forEach((gpgPublicKey) => {
 			// Add public key as new element in list
@@ -76,12 +78,29 @@ export class EncryptModal extends Modal {
                     }
                 });
             });
+            // Check if KeyId is same to Sign KeyId
+            if (gpgPublicKey.keyID == this.plugin.settings.pgpSignPublicKeyId) {
+                // Sign key name by ID
+                gpgSignName = gpgPublicKey.userID;
+            }
 		});
+        // Note if Sign is enable
+        let signNote: string = this.plugin.settings.pgpSignPublicKeyId == "0" ? "" : "Note: Remember that this text will be encrypted and SIGNED with the key (" + this.plugin.settings.pgpSignPublicKeyId + ") " + gpgSignName;
+        let buttonName: string = this.plugin.settings.pgpSignPublicKeyId == "0" ? "Encrypt" : "Sign & Encrypt";
         // Button to encript text
-        new Setting(contentEl).addButton((btn) => btn.setButtonText("Encrypt").setCta().onClick(async() => {
+        new Setting(contentEl).setDesc(signNote).addButton((btn) => btn.setButtonText(buttonName).setCta().onClick(async() => {
+            // Change button text by loader
+            btn.setIcon("loader")
+            // Disable button before encryption
+            btn.setDisabled(true);
             // Call to Encrypt Text Method
             await this.EncryptText();
+            // Enable button after encryption
+            btn.setDisabled(false);
+            // Change loader icon by text
+            btn.setButtonText(buttonName)
         }));
+
 	}
 
     // OnClose Method
