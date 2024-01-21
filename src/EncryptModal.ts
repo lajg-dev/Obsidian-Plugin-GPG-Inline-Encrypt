@@ -130,12 +130,22 @@ export class EncryptModal extends Modal {
                 this.close();
             }
         }
+        // Check if EncryptMode is Document
         else if (this.encryptMode == EncryptModalMode.DOCUMENT) {
-
-            console.log(this.editor)
-            //gpgEncrypt(this.editor., this.listPublicKeyToEncrypt);
+            // Send Encrypt command with list of GPG public keys IDs
+            let encryptedTextResult: GpgResult = await gpgEncrypt(this.plugin.settings.pgpExecPath, this.editor.getValue(), this.listPublicKeyToEncrypt, this.plugin.settings.pgpSignPublicKeyId);
+            // Check if any error exists
+            if (encryptedTextResult.error) {
+                // Show the error message
+                new Notice(encryptedTextResult.error.message);
+            }
+            // In case of no error happend
+            else {
+                // Replace encrypted text in selection
+                this.editor.replaceSelection(encryptedTextResult.result!.toString().trim());
+                // Close this modal
+                this.close();
+            }
         }
-        
-
     }
 }
