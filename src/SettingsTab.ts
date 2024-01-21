@@ -1,5 +1,5 @@
-import spawnGPG, { GpgResult, getListPublicKey } from 'gpg';
-import { App, DropdownComponent, PluginSettingTab, Setting } from 'obsidian';
+import spawnGPG, { GpgResult, getListPublicKey } from 'src/gpg';
+import { App, PluginSettingTab, Setting } from 'obsidian';
 import GpgEncryptPlugin from 'main';
 import { Settings } from './Settings';
 let fs = require('fs');

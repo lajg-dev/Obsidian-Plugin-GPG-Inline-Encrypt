@@ -1,19 +1,27 @@
 import { spawn } from "child_process";
 
+// Default and Global Args
 const globalArgs: string[] = ["--batch"];
 
+// Object that is returned when spawnGPG method is called
 export interface GpgResult {
     result?: Buffer;
     error?: Error;
 }
 
+// Function to execute GPG command with some arguments and input text
 export default function spawnGPG(exec: string,  input: string | Buffer | null, args?: string[]): Promise<GpgResult> {
-    return new Promise((resolve, reject) => {
+    // New Promise to resolve when GPG command is executed
+    return new Promise((resolve) => {
+      // Try to catch all exceptions
       try {
+        // In case of args are null
         if (!args) {
+          // Create an empty args array
           args = [];
         }
 
+        // Initial variables
         const buffers: Buffer[] = [];
         let buffersLength = 0;
         let error = "";
@@ -53,7 +61,9 @@ export default function spawnGPG(exec: string,  input: string | Buffer | null, a
           gpg.stdin.end(input);
         }
       }
+      // In case of exception
       catch (ex) {
+        // Resolve with exception message
         resolve({
           result: undefined,
           error: ex

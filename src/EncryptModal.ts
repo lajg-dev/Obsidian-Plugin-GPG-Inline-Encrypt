@@ -1,4 +1,4 @@
-import { GpgResult, getListPublicKey, gpgEncrypt } from "gpg";
+import { GpgResult, getListPublicKey, gpgEncrypt } from "src/gpg";
 import { App, Editor, MarkdownView, Modal, Notice, Setting } from "obsidian";
 import GpgEncryptPlugin from 'main';
 
