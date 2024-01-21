@@ -125,7 +125,7 @@ export class EncryptModal extends Modal {
             // In case of no error happend
             else {
                 // Replace encrypted text in selection
-                this.editor.replaceSelection(encryptedTextResult.result!.toString().trim());
+                this.editor.replaceSelection(this.BufferToSecretBase64(encryptedTextResult.result!));
                 // Close this modal
                 this.close();
             }
@@ -142,10 +142,16 @@ export class EncryptModal extends Modal {
             // In case of no error happend
             else {
                 // Replace encrypted text in selection
-                this.editor.setValue(encryptedTextResult.result!.toString().trim());
+                this.editor.setValue(this.BufferToSecretBase64(encryptedTextResult.result!));
                 // Close this modal
                 this.close();
             }
         }
+    }
+
+    // Convert Buffer to text in Base64 with some scape characters to be identify in LivePreview
+    private BufferToSecretBase64(bufferEncrypted: Buffer): string {
+        // Return buffer converted in Base64 with some scape characters to be identify in LivePreview
+        return "`secret-base-64 " + bufferEncrypted.toString('base64') + "`";
     }
 }
