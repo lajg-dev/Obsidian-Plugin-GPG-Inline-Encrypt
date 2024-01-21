@@ -142,7 +142,7 @@ export class EncryptModal extends Modal {
             // In case of no error happend
             else {
                 // Replace encrypted text in selection
-                this.editor.replaceSelection(encryptedTextResult.result!.toString().trim());
+                this.editor.setValue(encryptedTextResult.result!.toString().trim());
                 // Close this modal
                 this.close();
             }
