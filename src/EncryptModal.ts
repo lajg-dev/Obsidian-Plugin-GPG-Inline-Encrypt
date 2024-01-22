@@ -103,7 +103,6 @@ export class EncryptModal extends Modal {
             // Change loader icon by text
             btn.setButtonText(buttonName)
         }));
-
 	}
 
     // OnClose Method
