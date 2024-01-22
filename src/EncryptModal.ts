@@ -8,6 +8,9 @@ export enum EncryptModalMode {
     DOCUMENT = "Document"
 }
 
+// GPG Encrypt Inline Prefix
+export const GPG_INLINE_ENCRYPT_PREFIX: string = "gpg-base-64";
+
 // Encrypt modal (Works for inline and document encryption)
 export class EncryptModal extends Modal {
 
@@ -152,6 +155,6 @@ export class EncryptModal extends Modal {
     // Convert Buffer to text in Base64 with some scape characters to be identify in LivePreview
     private BufferToSecretBase64(bufferEncrypted: Buffer): string {
         // Return buffer converted in Base64 with some scape characters to be identify in LivePreview
-        return "`gpg-base-64 " + bufferEncrypted.toString('base64') + "`";
+        return "`" + GPG_INLINE_ENCRYPT_PREFIX + " " + bufferEncrypted.toString('base64') + "`";
     }
 }

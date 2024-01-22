@@ -2,6 +2,7 @@ import { GpgSettingsTab } from 'src/SettingsTab';
 import { HotKeys } from 'src/HotKeys';
 import { Plugin } from 'obsidian';
 import { GpgEncryptSettings, Settings } from 'src/Settings';
+import { livePreviewExtensionGpgEncrypt } from 'src/LivePreview';
 
 // My plugin PGP Encrypt
 export default class GpgEncryptPlugin extends Plugin {
@@ -19,6 +20,8 @@ export default class GpgEncryptPlugin extends Plugin {
 		let hotKeys: HotKeys = new HotKeys(this.app, this);
 		this.addCommand(hotKeys.GpgEncryptInline);
 		this.addCommand(hotKeys.GpgEncryptDocument);
+		// Add Live Privew Extension GPG Encrypt
+		this.registerEditorExtension(livePreviewExtensionGpgEncrypt(this.app));
 	}
 
 	// OnUnload Method in PGP Encrypt Plugin
