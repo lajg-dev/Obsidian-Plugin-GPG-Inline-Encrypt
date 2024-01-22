@@ -4,6 +4,7 @@ import { App, editorLivePreviewField } from "obsidian";
 import type { PluginValue, } from '@codemirror/view';
 import { RangeSetBuilder } from '@codemirror/state';
 import { syntaxTree } from "@codemirror/language";
+import { DecryptModal } from './DecryptModal';
 
 // widget that will replace the encrypted text
 export class EncryptedWidget extends WidgetType {
@@ -25,8 +26,8 @@ export class EncryptedWidget extends WidgetType {
         a.addClass('gpg-decrypt-a');
         // OnClickEvent in element a
         a.onClickEvent((event: MouseEvent) => {
-            //this.app, event, this.value
-            // TODO: Call Decrypt Modal
+            // Open Decrypt Modal with all arguments
+            new DecryptModal(this.app, this.value).open();
         });
         // Return div that contains decrypt button
         return div;
