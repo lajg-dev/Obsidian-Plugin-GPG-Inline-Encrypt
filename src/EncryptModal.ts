@@ -152,6 +152,6 @@ export class EncryptModal extends Modal {
     // Convert Buffer to text in Base64 with some scape characters to be identify in LivePreview
     private BufferToSecretBase64(bufferEncrypted: Buffer): string {
         // Return buffer converted in Base64 with some scape characters to be identify in LivePreview
-        return "`secret-base-64 " + bufferEncrypted.toString('base64') + "`";
+        return "`gpg-base-64 " + bufferEncrypted.toString('base64') + "`";
     }
 }
