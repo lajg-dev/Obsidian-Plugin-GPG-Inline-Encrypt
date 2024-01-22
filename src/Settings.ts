@@ -4,12 +4,14 @@ import GpgEncryptPlugin from "main";
 export interface GpgEncryptSettings {
 	pgpExecPath: string;
 	pgpSignPublicKeyId: string
+    pgpAlwaysTrust: boolean
 }
 
 // Default settings values
 const DEFAULT_SETTINGS: GpgEncryptSettings = {
     pgpExecPath: '/usr/local/bin/gpg',
-    pgpSignPublicKeyId: "0"
+    pgpSignPublicKeyId: "0",
+    pgpAlwaysTrust: false
 }
 
 // Settings class

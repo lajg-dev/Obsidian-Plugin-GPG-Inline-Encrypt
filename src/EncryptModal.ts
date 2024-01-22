@@ -58,7 +58,7 @@ export class EncryptModal extends Modal {
         // Help text is created to select GPG keys
         contentEl.createEl("p", { text: "Select which Public GPG key(s) you want to be able to decrypt the text:" });
         // Get list of GPG public Keys
-		let gpgPublicKeys: { keyID: string; userID: string }[] = await getListPublicKey(this.plugin.settings.pgpExecPath);
+		let gpgPublicKeys: { keyID: string; userID: string }[] = await getListPublicKey(this.plugin.settings);
         // Sign key name by ID
         let gpgSignName: string = "";
         // Iterate over each public key
@@ -118,7 +118,7 @@ export class EncryptModal extends Modal {
         // Check if EncryptMode is Inline
         if (this.encryptMode == EncryptModalMode.INLINE) {
             // Send Encrypt command with list of GPG public keys IDs
-            let encryptedTextResult: GpgResult = await gpgEncrypt(this.plugin.settings.pgpExecPath, this.editor.getSelection(), this.listPublicKeyToEncrypt, this.plugin.settings.pgpSignPublicKeyId);
+            let encryptedTextResult: GpgResult = await gpgEncrypt(this.plugin.settings, this.editor.getSelection(), this.listPublicKeyToEncrypt, this.plugin.settings.pgpSignPublicKeyId);
             // Check if any error exists
             if (encryptedTextResult.error) {
                 // Show the error message
@@ -135,7 +135,7 @@ export class EncryptModal extends Modal {
         // Check if EncryptMode is Document
         else if (this.encryptMode == EncryptModalMode.DOCUMENT) {
             // Send Encrypt command with list of GPG public keys IDs
-            let encryptedTextResult: GpgResult = await gpgEncrypt(this.plugin.settings.pgpExecPath, this.editor.getValue(), this.listPublicKeyToEncrypt, this.plugin.settings.pgpSignPublicKeyId);
+            let encryptedTextResult: GpgResult = await gpgEncrypt(this.plugin.settings, this.editor.getValue(), this.listPublicKeyToEncrypt, this.plugin.settings.pgpSignPublicKeyId);
             // Check if any error exists
             if (encryptedTextResult.error) {
                 // Show the error message

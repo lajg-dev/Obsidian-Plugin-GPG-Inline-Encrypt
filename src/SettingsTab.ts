@@ -57,6 +57,23 @@ export class GpgSettingsTab extends PluginSettingTab {
 		this.checkGpgPath(this.plugin.settings.pgpExecPath);
 		// ---------- List of GPG Public Keys ----------
 
+		// ---------- Always Trust ----------
+		new Setting(containerEl)
+		.setName("Always trust any key")
+		.setDesc("Always trust any used GPG key")
+		.addToggle((toggle) => {
+			// Toggle component default value is false
+			toggle.setValue(this.plugin.settings.pgpAlwaysTrust);
+			// Toggle component is created with onChange event
+			toggle.onChange(async (value: boolean) => {
+				// Set settig variable pgpAlwaysTrust with new value
+				this.plugin.settings.pgpAlwaysTrust = value;
+				// Save settings with change
+				await new Settings(this.plugin).saveSettings();
+			});
+		});
+		// ---------- Always Trust ----------
+
 		// ---------- Sign text ----------
 		new Setting(containerEl)
 			.setName("Sign encrypted text")
@@ -103,7 +120,7 @@ export class GpgSettingsTab extends PluginSettingTab {
 				return;
 			}
 			// Check GPG version in console
-			let gpgResult: GpgResult = await spawnGPG(value, null, ["--logger-fd", "1", "--version"]);
+			let gpgResult: GpgResult = await spawnGPG(this.plugin.settings, null, ["--logger-fd", "1", "--version"]);
 			// Check if result is not null and is not an error
 			if(gpgResult.result && !gpgResult.error) {
 				// Get version string from result
@@ -190,7 +207,7 @@ export class GpgSettingsTab extends PluginSettingTab {
 	// Function to refresh list of GPG Public Keys
 	private async RefreshGpgPublicKeyList() {
 		// Get list of GPG public Keys
-		let gpgPublicKeys: { keyID: string; userID: string }[] = await getListPublicKey(this.plugin.settings.pgpExecPath);
+		let gpgPublicKeys: { keyID: string; userID: string }[] = await getListPublicKey(this.plugin.settings);
 		// Iterate over each sub-element in list
 		while (this.gpgPublicKeysList.descEl.firstChild) {
 			// Remove each sub-element in list to clear list
@@ -221,7 +238,7 @@ export class GpgSettingsTab extends PluginSettingTab {
 		// Check ir requireSign to populate DropDown
 		if (requireSign) {
 			// Get list of GPG public Keys
-			let gpgPublicKeys: { keyID: string; userID: string }[] = await getListPublicKey(this.plugin.settings.pgpExecPath);
+			let gpgPublicKeys: { keyID: string; userID: string }[] = await getListPublicKey(this.plugin.settings);
 			// Clear all DropDown items
 			this.gpgSignKeyId.addDropdown(dropDown => {
 				// Add empty key as new element in list

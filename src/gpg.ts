@@ -1,4 +1,5 @@
 import { spawn } from "child_process";
+import { GpgEncryptSettings } from "./Settings";
 
 // Default and Global Args
 const globalArgs: string[] = ["--batch"];
@@ -9,8 +10,21 @@ export interface GpgResult {
     error?: Error;
 }
 
+// Function to get Aditional Args
+function AditionalArgs(settings: GpgEncryptSettings): string[] {
+  // Set Aditional Args for each gpg function
+  let aditionalArgs: string[] = [];
+  // If pgpAlwaysTrust is turn on
+  if (settings.pgpAlwaysTrust) {
+    // Add two new Default Args in each gpg function
+    aditionalArgs = aditionalArgs.concat(["--trust-model", "always"]);
+  }
+  // Return list of Aditional Args
+  return aditionalArgs;
+}
+
 // Function to execute GPG command with some arguments and input text
-export default function spawnGPG(exec: string,  input: string | Buffer | null, args?: string[]): Promise<GpgResult> {
+export default function spawnGPG(settings: GpgEncryptSettings,  input: string | Buffer | null, args?: string[]): Promise<GpgResult> {
     // New Promise to resolve when GPG command is executed
     return new Promise((resolve) => {
       // Try to catch all exceptions
@@ -25,7 +39,7 @@ export default function spawnGPG(exec: string,  input: string | Buffer | null, a
         const buffers: Buffer[] = [];
         let buffersLength = 0;
         let error = "";
-        const gpg = spawn(exec, globalArgs.concat(args));
+        const gpg = spawn(settings.pgpExecPath, globalArgs.concat(args));
     
         gpg.stdout.on("data", (buf: Buffer) => {
           buffers.push(buf);
@@ -73,9 +87,9 @@ export default function spawnGPG(exec: string,  input: string | Buffer | null, a
 }
 
 // Get list of all Public Key availables
-export async function getListPublicKey(exec: string): Promise<{ keyID: string; userID: string }[]> {
+export async function getListPublicKey(settings: GpgEncryptSettings): Promise<{ keyID: string; userID: string }[]> {
   // Build the executable and args
-  const gpgResult: GpgResult  = await spawnGPG(exec, null, ["--logger-fd", "1", "--list-public-keys", "--with-colons"]);
+  const gpgResult: GpgResult  = await spawnGPG(settings, null, ["--logger-fd", "1", "--list-public-keys", "--with-colons"]);
   // Check if result are null
   if(!gpgResult.result) {
     // And return a null array
@@ -109,7 +123,7 @@ export async function getListPublicKey(exec: string): Promise<{ keyID: string; u
 }
 
 // Function to encrypt a plainText with a list of GPG public keys ID
-export async function gpgEncrypt(exec: string, plainText:string, publicKeyIds: string[], signPublicKeyId: string): Promise<GpgResult> {
+export async function gpgEncrypt(settings: GpgEncryptSettings, plainText:string, publicKeyIds: string[], signPublicKeyId: string): Promise<GpgResult> {
   // Check if at least one public key is selected
   if (publicKeyIds.length <= 0) {
     // And return with error message
@@ -119,7 +133,7 @@ export async function gpgEncrypt(exec: string, plainText:string, publicKeyIds: s
     };
   }
   // List of Args before publicKeyIds
-  let args: string[] = ["--encrypt", "--armor"];
+  let args: string[] = ["--encrypt", "--armor"].concat(AditionalArgs(settings));
   // Check if Sign is necesary in this encryption
   if (signPublicKeyId != "0") {
     // Add args to Sign with a key
@@ -131,7 +145,7 @@ export async function gpgEncrypt(exec: string, plainText:string, publicKeyIds: s
     args = args.concat(["--recipient", publicKey]);
   });
   // Build the executable and args
-  const gpgResult: GpgResult  = await spawnGPG(exec, plainText, args);
+  const gpgResult: GpgResult = await spawnGPG(settings, plainText, args);
   // Check if error is null
   if(gpgResult.error) {
     // Return with error message
