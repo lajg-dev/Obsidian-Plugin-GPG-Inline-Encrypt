@@ -39,9 +39,8 @@ export class DecryptModal extends Modal {
         // Button to encript text
         new Setting(contentEl)
         .addButton((btn) => btn.setButtonText("Copy Encrypted Text").onClick(async() => {
-
-            // TODO: Copy to clipboard
-
+            // Copy encrypted message to clipboard
+            navigator.clipboard.writeText(this.encryptedMessage);
             // Send successful copy to clipboard
             new Notice("Encrypted Text Was Copied!")
         })).addButton((btn) => btn.setButtonText("Decrypt").setCta().onClick(async() => {
