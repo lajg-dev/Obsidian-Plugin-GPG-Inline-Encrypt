@@ -4,7 +4,7 @@ import { App, editorLivePreviewField } from "obsidian";
 import type { PluginValue, } from '@codemirror/view';
 import { RangeSetBuilder } from '@codemirror/state';
 import { syntaxTree } from "@codemirror/language";
-import { DecryptModal } from './DecryptModal';
+import { DecryptPreviewModal } from './DecryptPreviewModal';
 
 // widget that will replace the encrypted text
 export class EncryptedWidget extends WidgetType {
@@ -27,7 +27,7 @@ export class EncryptedWidget extends WidgetType {
         // OnClickEvent in element a
         a.onClickEvent((event: MouseEvent) => {
             // Open Decrypt Modal with all arguments
-            new DecryptModal(this.app, this.value).open();
+            new DecryptPreviewModal(this.app, this.value).open();
         });
         // Return div that contains decrypt button
         return div;

@@ -28,3 +28,8 @@
     margin-top: 0px;
     cursor: pointer;
 }
+.gpg-code-preview {
+    background-color: #e3e8f4;
+    border-radius: 8px;
+    padding: 20px
+}
