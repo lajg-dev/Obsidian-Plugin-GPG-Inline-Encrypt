@@ -11,12 +11,12 @@ import GpgEncryptPlugin from 'main';
 export class EncryptedWidget extends WidgetType {
 
     // Constructor function with initial args
-    constructor(public app: App, public value: string, public plugin: GpgEncryptPlugin) {
+    constructor(public app: App, public value: string, public plugin: GpgEncryptPlugin, public from: number, public to: number) {
         super();
     }
 
     // Method that will manipulate DOM to include decrypt button
-    toDOM(view: EditorView): HTMLElement {
+    toDOM(): HTMLElement {
         // New div that will contain the decrypt button
         const div = document.createElement("span");
         // Add new CSS class to div
@@ -26,9 +26,9 @@ export class EncryptedWidget extends WidgetType {
         // Add new CSS class to a
         a.addClass('gpg-decrypt-a');
         // OnClickEvent in element a
-        a.onClickEvent((event: MouseEvent) => {
+        a.onClickEvent(() => {
             // Open Decrypt Modal with all arguments
-            new DecryptPreviewModal(this.app, this.value, this.plugin).open();
+            new DecryptPreviewModal(this.app, this.value, this.plugin, this.from, this.to).open();
         });
         // Return div that contains decrypt button
         return div;
@@ -80,7 +80,7 @@ export const livePreviewExtensionGpgEncrypt = (app: App, plugin: GpgEncryptPlugi
                         // Replace the decoration for EncryptedWidget
                         builder.add(node.from, node.to,
                             Decoration.replace({
-                                widget: new EncryptedWidget(app, value, plugin)
+                                widget: new EncryptedWidget(app, value, plugin, node.from, node.to)
                             })
                         );
                     }

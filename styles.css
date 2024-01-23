@@ -34,3 +34,7 @@
     border-radius: 8px;
     padding: 20px
 }
+.gpg-plain-text-area {
+    height: 200px;
+    width: 100%;
+}

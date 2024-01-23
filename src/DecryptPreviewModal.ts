@@ -1,5 +1,6 @@
 import { App, Modal, Notice, Setting } from "obsidian";
 import { GPG_INLINE_ENCRYPT_PREFIX } from "./EncryptModal";
+import { DecryptModal } from "./DecryptModal";
 import { GpgResult, gpgDecrypt } from "./gpg";
 import GpgEncryptPlugin from "main";
 
@@ -12,7 +13,7 @@ export class DecryptPreviewModal extends Modal {
     encryptedMessage: string;
 
     // Constructor of modal encrypt
-	constructor(app: App, encryptedMessageBase64: string, public plugin: GpgEncryptPlugin) {
+	constructor(app: App, encryptedMessageBase64: string, public plugin: GpgEncryptPlugin, public from: number, public to: number) {
 		super(app);
         // Remove scape characters
         let encryptedMessageBase64WithoutScapeKeys = encryptedMessageBase64.substring(GPG_INLINE_ENCRYPT_PREFIX.length + 1, encryptedMessageBase64.length);
@@ -24,7 +25,7 @@ export class DecryptPreviewModal extends Modal {
         this.encryptedMessage = bufferObj.toString("utf8");
 	}
 
-     // OnOpen Method
+    // OnOpen Method
 	async onOpen() {
         // Get an instance of this Element
         const {contentEl} = this;
@@ -67,7 +68,7 @@ export class DecryptPreviewModal extends Modal {
             // Element type br to present a return in preview screen
             divCode.createEl("br");
         }
-        // Button to encript text
+        // Button to decript text
         let buttonName: string = "Decrypt";
         new Setting(contentEl)
         .addButton((btn) => btn.setButtonText("Copy Encrypted Text").onClick(async() => {
@@ -84,8 +85,8 @@ export class DecryptPreviewModal extends Modal {
             let decryptedTextResult: GpgResult = await gpgDecrypt(this.plugin.settings, this.encryptedMessage);
             // Check if result contains data
             if (decryptedTextResult.result) {
-                // TODO: Send decryptedText to a new modal
-                console.log(decryptedTextResult.result.toString().trim());
+                // Open a new decrypt modal with plain text
+                new DecryptModal(this.app, decryptedTextResult.result.toString().trim(), this.plugin, this.from, this.to).open();
                 // Close this modal
                 this.close();
             }
