@@ -5,12 +5,13 @@ import type { PluginValue, } from '@codemirror/view';
 import { RangeSetBuilder } from '@codemirror/state';
 import { syntaxTree } from "@codemirror/language";
 import { DecryptPreviewModal } from './DecryptPreviewModal';
+import GpgEncryptPlugin from 'main';
 
 // widget that will replace the encrypted text
 export class EncryptedWidget extends WidgetType {
 
     // Constructor function with initial args
-    constructor(public app: App, public value: string) {
+    constructor(public app: App, public value: string, public plugin: GpgEncryptPlugin) {
         super();
     }
 
@@ -27,7 +28,7 @@ export class EncryptedWidget extends WidgetType {
         // OnClickEvent in element a
         a.onClickEvent((event: MouseEvent) => {
             // Open Decrypt Modal with all arguments
-            new DecryptPreviewModal(this.app, this.value).open();
+            new DecryptPreviewModal(this.app, this.value, this.plugin).open();
         });
         // Return div that contains decrypt button
         return div;
@@ -35,7 +36,7 @@ export class EncryptedWidget extends WidgetType {
 }
 
 // Live Preview Extension to change encrypted text into a image button
-export const livePreviewExtensionGpgEncrypt = (app: App) => ViewPlugin.fromClass(class implements PluginValue {
+export const livePreviewExtensionGpgEncrypt = (app: App, plugin: GpgEncryptPlugin) => ViewPlugin.fromClass(class implements PluginValue {
     // Decoration set
     decorations: DecorationSet;
 
@@ -79,7 +80,7 @@ export const livePreviewExtensionGpgEncrypt = (app: App) => ViewPlugin.fromClass
                         // Replace the decoration for EncryptedWidget
                         builder.add(node.from, node.to,
                             Decoration.replace({
-                                widget: new EncryptedWidget(app, value)
+                                widget: new EncryptedWidget(app, value, plugin)
                             })
                         );
                     }

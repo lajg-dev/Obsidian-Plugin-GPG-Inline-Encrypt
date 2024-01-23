@@ -1,5 +1,7 @@
 import { App, Modal, Notice, Setting } from "obsidian";
 import { GPG_INLINE_ENCRYPT_PREFIX } from "./EncryptModal";
+import { GpgResult, gpgDecrypt } from "./gpg";
+import GpgEncryptPlugin from "main";
 
 // Decrypt Preview modal (Works for inline and document encryption)
 export class DecryptPreviewModal extends Modal {
@@ -10,7 +12,7 @@ export class DecryptPreviewModal extends Modal {
     encryptedMessage: string;
 
     // Constructor of modal encrypt
-	constructor(app: App, encryptedMessageBase64: string) {
+	constructor(app: App, encryptedMessageBase64: string, public plugin: GpgEncryptPlugin) {
 		super(app);
         // Remove scape characters
         let encryptedMessageBase64WithoutScapeKeys = encryptedMessageBase64.substring(GPG_INLINE_ENCRYPT_PREFIX.length + 1, encryptedMessageBase64.length);
@@ -66,16 +68,36 @@ export class DecryptPreviewModal extends Modal {
             divCode.createEl("br");
         }
         // Button to encript text
+        let buttonName: string = "Decrypt";
         new Setting(contentEl)
         .addButton((btn) => btn.setButtonText("Copy Encrypted Text").onClick(async() => {
             // Copy encrypted message to clipboard
             navigator.clipboard.writeText(this.encryptedMessage);
             // Send successful copy to clipboard
             new Notice("Encrypted Text Was Copied!")
-        })).addButton((btn) => btn.setButtonText("Decrypt").setCta().onClick(async() => {
-
-            // TODO: Decrypt message
-
+        })).addButton((btn) => btn.setButtonText(buttonName).setCta().onClick(async() => {
+            // Change button text by loader
+            btn.setIcon("loader")
+            // Disable button before encryption
+            btn.setDisabled(true);
+            // Send Decrypt command
+            let decryptedTextResult: GpgResult = await gpgDecrypt(this.plugin.settings, this.encryptedMessage);
+            console.log(decryptedTextResult)
+            // Check if any error exists
+            if (decryptedTextResult.error) {
+                // Show the error message
+                new Notice(decryptedTextResult.error.message);
+            }
+            // In case of no error happend
+            else {
+                console.log(decryptedTextResult.result!);
+                // Close this modal
+                this.close();
+            }
+            // Enable button after encryption
+            btn.setDisabled(false);
+            // Change loader icon by text
+            btn.setButtonText(buttonName)
         }));
     }
 

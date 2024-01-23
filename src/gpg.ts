@@ -165,3 +165,30 @@ export async function gpgEncrypt(settings: GpgEncryptSettings, plainText:string,
     error: undefined
   };
 }
+
+
+// Function to decrypt an encrypted text with a private key
+export async function gpgDecrypt(settings: GpgEncryptSettings, encryptedText:string): Promise<GpgResult> {
+  // List of Args before publicKeyIds
+  let args: string[] = ["--decrypt"].concat(AditionalArgs(settings));
+  // Build the executable and args
+  const gpgResult: GpgResult = await spawnGPG(settings, encryptedText, args);
+  // Check if error is null
+  if(gpgResult.error) {
+    // Return with error message
+    return gpgResult;
+  }
+  // Check if result is null
+  if(!gpgResult.result) {
+    // And return with error message
+    return {
+      result: undefined,
+      error: new Error("❌ Decrypt failed, result is empty")
+    };
+  }
+  // Send resposnse with encripted text
+  return {
+    result: gpgResult.result,
+    error: undefined
+  };
+}

@@ -21,7 +21,7 @@ export default class GpgEncryptPlugin extends Plugin {
 		this.addCommand(hotKeys.GpgEncryptInline);
 		this.addCommand(hotKeys.GpgEncryptDocument);
 		// Add Live Privew Extension GPG Encrypt
-		this.registerEditorExtension(livePreviewExtensionGpgEncrypt(this.app));
+		this.registerEditorExtension(livePreviewExtensionGpgEncrypt(this.app, this));
 	}
 
 	// OnUnload Method in PGP Encrypt Plugin

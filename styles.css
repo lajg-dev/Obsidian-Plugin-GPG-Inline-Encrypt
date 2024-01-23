@@ -30,6 +30,7 @@
 }
 .gpg-code-preview {
     background-color: #e3e8f4;
+    color: black;
     border-radius: 8px;
     padding: 20px
 }
