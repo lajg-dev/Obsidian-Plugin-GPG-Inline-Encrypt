@@ -85,8 +85,15 @@ export class DecryptPreviewModal extends Modal {
             let decryptedTextResult: GpgResult = await gpgDecrypt(this.plugin.settings, this.encryptedMessage);
             // Check if result contains data
             if (decryptedTextResult.result) {
+                // Extra info in decrypt process
+                let extraInfo: string = "";
+                // In case of any error happend
+                if (decryptedTextResult.error) {
+                    // Show extra info in variable
+                    extraInfo = decryptedTextResult.error.message;
+                }
                 // Open a new decrypt modal with plain text
-                new DecryptModal(this.app, decryptedTextResult.result.toString().trim(), this.plugin, this.from, this.to).open();
+                new DecryptModal(this.app, decryptedTextResult.result.toString().trim(), extraInfo, this.plugin, this.from, this.to).open();
                 // Close this modal
                 this.close();
             }

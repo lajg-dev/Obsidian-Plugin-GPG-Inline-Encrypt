@@ -38,3 +38,10 @@
     height: 200px;
     width: 100%;
 }
+.gpg-code-sign-ok {
+    background-color: #e3f4e4;
+    color: black;
+    border-radius: 8px;
+    padding: 20px;
+    font-size: 0.7em;
+}

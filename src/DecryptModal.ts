@@ -5,7 +5,7 @@ import GpgEncryptPlugin from "main";
 export class DecryptModal extends Modal {
 
     // Constructor of modal encrypt
-	constructor(app: App, public plainText: string, public plugin: GpgEncryptPlugin, public from: number, public to: number) {
+	constructor(app: App, public plainText: string, public extraInfo: string, public plugin: GpgEncryptPlugin, public from: number, public to: number) {
 		super(app);
 	}
 
@@ -13,8 +13,16 @@ export class DecryptModal extends Modal {
 	async onOpen() {
         // Get an instance of this Element
         const {contentEl} = this;
-        // A title div and text p is created
+        // A title div is created
         contentEl.createEl("h1", { text: "Decrypted text" });
+        // Check if extra info is not null nor empty
+        if (this.extraInfo && this.extraInfo.trim() != "") {
+            // P that shows extra info in decrypt process
+            let extraInfoDiv: HTMLDivElement = contentEl.createEl("div");
+            extraInfoDiv.className = "gpg-code-sign-ok";
+            this.organizeOutText(this.extraInfo, extraInfoDiv);
+        }
+        // Text p is created
         contentEl.createEl("p").setText("Plain text preview of the decrypted message:");
         // Textarea that contains plain text decrypted
         let textArea: HTMLTextAreaElement = contentEl.createEl("textarea");
@@ -70,7 +78,7 @@ export class DecryptModal extends Modal {
                 // The decrypted text is replaced according to the previous calculations.
                 editor.replaceRange(this.plainText, editorPositionFrom, editorPositionTo)
                 // The for is broken to deliver the result and not continue calculating
-                break;
+                return;
             }
             // In case the characters of the previous lines plus the characters of the current line still do not reach the characters of FROM and TO,
             // it means that this line is not and we continue with the next line
@@ -81,6 +89,26 @@ export class DecryptModal extends Modal {
         }
         // Error message
         new Notice("The encrypted text was not found in the current document")
+    }
+
+    // Organize out text into code elements
+    organizeOutText(outText: string, divCode: any) {
+        // Flag to check if is first line
+        let isFirstLine: boolean = true;
+        // Split lines by return
+        let lines: string[] = outText.split("\n");
+        // Iterate line by line
+        lines.forEach((line) => {
+            // Check if is not a first line
+            if (!isFirstLine) {
+                // Element type br to present a return in preview screen
+                divCode.createEl("br");
+            }
+            // Element type code to present a preview of encrypted text
+            divCode.createEl("code").setText(line);
+            // Mark flag as false
+            isFirstLine = false;
+        });
     }
 
     // OnClose Method
