@@ -33,3 +33,18 @@ Step 3A - A pop-up window will appear with the list of GPG keys available in you
 Step 3B - If you select sign and encrypt, the only difference with Step 3A is that now the button will tell you that it is going to Sign and Encrypt, and this may prompt you for your phasphrase to sign the text.
 
 ![Phasphrase to encrypt and sign](img/Screenshot_04.png)
+
+## Decrypt some text
+
+Step 1 - The first step is from a note with an encrypted secret, click (like a button) on the image that says secret
+Step 2 - This will open a modal with the message encrypted in GPG, if you want to copy the encrypted message, you can do so using the "Copy Encrypted Text" button, you can also decrypt the message with the "Decrypt" button
+
+![Decrypt 1/3](img/Screenshot_05.png)
+
+Step 3 - By clicking on the "Decrypt" button, the decryption process will begin, this may prompt you for your phasphrase
+
+![Decrypt 2/3](img/Screenshot_06.png)
+
+Step 4 - Once the decryption process has finished, you will have a green message with technical information about the process, but you will also have a text area with the decrypted text, here you can copy it using the "Copy Plain Text" button or directly restore the decrypted text to the note using the "Restore plain text to document" button
+
+![Decrypt 3/3](img/Screenshot_07.png)
