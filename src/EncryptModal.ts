@@ -136,17 +136,17 @@ export class EncryptModal extends Modal {
         else if (this.encryptMode == EncryptModalMode.DOCUMENT) {
             // Send Encrypt command with list of GPG public keys IDs
             let encryptedTextResult: GpgResult = await gpgEncrypt(this.plugin.settings, this.editor.getValue(), this.listPublicKeyToEncrypt, this.plugin.settings.pgpSignPublicKeyId);
-            // Check if any error exists
-            if (encryptedTextResult.error) {
-                // Show the error message
-                new Notice(encryptedTextResult.error.message);
-            }
-            // In case of no error happend
-            else {
+            // Check if result contains data
+            if (encryptedTextResult.result) {
                 // Replace encrypted text in selection
-                this.editor.setValue(this.BufferToSecretBase64(encryptedTextResult.result!));
+                this.editor.setValue(this.BufferToSecretBase64(encryptedTextResult.result));
                 // Close this modal
                 this.close();
+            }
+            // In case of any error happend
+            else if (encryptedTextResult.error) {
+                // Show the error message
+                new Notice(encryptedTextResult.error.message);
             }
         }
     }

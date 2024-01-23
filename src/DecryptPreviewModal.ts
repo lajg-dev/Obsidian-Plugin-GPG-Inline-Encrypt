@@ -82,17 +82,17 @@ export class DecryptPreviewModal extends Modal {
             btn.setDisabled(true);
             // Send Decrypt command
             let decryptedTextResult: GpgResult = await gpgDecrypt(this.plugin.settings, this.encryptedMessage);
-            console.log(decryptedTextResult)
-            // Check if any error exists
-            if (decryptedTextResult.error) {
-                // Show the error message
-                new Notice(decryptedTextResult.error.message);
-            }
-            // In case of no error happend
-            else {
-                console.log(decryptedTextResult.result!);
+            // Check if result contains data
+            if (decryptedTextResult.result) {
+                // TODO: Send decryptedText to a new modal
+                console.log(decryptedTextResult.result.toString().trim());
                 // Close this modal
                 this.close();
+            }
+            // In case of any error happend
+            else if (decryptedTextResult.error) {
+                // Show the error message
+                new Notice(decryptedTextResult.error.message);
             }
             // Enable button after encryption
             btn.setDisabled(false);
