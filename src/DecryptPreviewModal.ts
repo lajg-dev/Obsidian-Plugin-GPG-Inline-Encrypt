@@ -36,7 +36,7 @@ export class DecryptPreviewModal extends Modal {
         const divCode: HTMLDivElement = contentEl.createEl("div");
         divCode.className = "gpg-code-preview";
         // Split encrypted message by returns
-        var encryptedMessageSplited = this.encryptedMessage.split("\n");
+        let encryptedMessageSplited = this.encryptedMessage.split("\n");
         // Max number of rows in preview screen
         const max_number_rows: number = 20;
         // Flag to detect if middle dots were printed
