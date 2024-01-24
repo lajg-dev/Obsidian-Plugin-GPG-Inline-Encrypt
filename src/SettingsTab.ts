@@ -98,6 +98,10 @@ export class GpgSettingsTab extends PluginSettingTab {
 
 	// Function to check if GPG Path exits
 	private async checkGpgPath(value: string) {
+		// Set settig variable pgpExecPath with new value
+		this.plugin.settings.pgpExecPath = value;
+		// Save settings with change
+		await new Settings(this.plugin).saveSettings();
 		// Hide list of public GPG Keys
 		this.gpgPublicKeysList.settingEl.hide();
 		// Start with Loading status while real one is calculated
@@ -129,10 +133,6 @@ export class GpgSettingsTab extends PluginSettingTab {
 				if(version.includes("gpg") && version.includes("GnuPG")) {
 					// Change the status to OK
 					this.changeGpgPathStatus(GpgExecPathStatus.OK);
-					// Set settig variable pgpExecPath with new value
-					this.plugin.settings.pgpExecPath = value;
-					// Save settings with change
-					await new Settings(this.plugin).saveSettings();
 					// Refresh GPG public key list
 					await this.RefreshGpgPublicKeyList();
 					// End this check process
