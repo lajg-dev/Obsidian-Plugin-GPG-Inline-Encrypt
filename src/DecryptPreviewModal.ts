@@ -71,11 +71,11 @@ export class DecryptPreviewModal extends Modal {
         // Button to decript text
         let buttonName: string = "Decrypt";
         new Setting(contentEl)
-        .addButton((btn) => btn.setButtonText("Copy Encrypted Text").onClick(async() => {
+        .addButton((btn) => btn.setButtonText("Copy encrypted text").onClick(async() => {
             // Copy encrypted message to clipboard
             navigator.clipboard.writeText(this.encryptedMessage);
             // Send successful copy to clipboard
-            new Notice("Encrypted Text Was Copied!")
+            new Notice("Encrypted text was copied!")
         })).addButton((btn) => btn.setButtonText(buttonName).setCta().onClick(async() => {
             // Change button text by loader
             btn.setIcon("loader")

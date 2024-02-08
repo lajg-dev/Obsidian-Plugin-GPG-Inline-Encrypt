@@ -35,7 +35,7 @@ export class DecryptModal extends Modal {
             // Copy plain message to clipboard
             navigator.clipboard.writeText(this.plainText);
             // Send successful copy to clipboard
-            new Notice("Plain Text Was Copied!")
+            new Notice("Plain text was copied!");
         }))
         // Check if activeEditor or editor are available
         if (this.app.workspace.activeEditor && this.app.workspace.activeEditor.editor) {

@@ -52,7 +52,7 @@ export class GpgSettingsTab extends PluginSettingTab {
 
 		// ---------- List of GPG Public Keys ----------
 		this.gpgPublicKeysList = new Setting(containerEl)
-			.setName("Public Keys")
+			.setName("Public keys")
 		// Run by first time checkGpgPath function
 		this.checkGpgPath(this.plugin.settings.pgpExecPath);
 		// ---------- List of GPG Public Keys ----------

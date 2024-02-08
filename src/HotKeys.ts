@@ -15,8 +15,8 @@ export class HotKeys {
 	}
     // HotKey to Encrypt Inline
     public GpgEncryptInline: Command = {
-        id: 'gpg-encrypt-inline',
-        name: 'GPG encrypt inline',
+        id: 'inline',
+        name: 'Encrypt inline',
         icon: 'lock',
         editorCallback: (editor: Editor, view: MarkdownView) => {
             // Open Encrypt Modal in mode InLine
@@ -25,8 +25,8 @@ export class HotKeys {
     };
     // HotKey to Encrypt Document
     public GpgEncryptDocument: Command = {
-        id: 'gpg-encrypt-document',
-        name: 'GPG encrypt document',
+        id: 'document',
+        name: 'Encrypt document',
         icon: 'lock',
         editorCallback: (editor: Editor, view: MarkdownView) => {
             // Open Encrypt Modal in mode Document
