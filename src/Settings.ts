@@ -42,7 +42,7 @@ function getDefaultExecPath(): string {
     switch (process.platform) {
         // In case of Windows OS
         case "win32":
-            return "C:\Program Files (x86)\GnuPG\bin\gpg.exe";
+            return "C:\\Program Files (x86)\\GnuPG\\bin\\gpg.exe";
         // In case of MacOS
         case "darwin":
             return "/usr/local/bin/gpg";
