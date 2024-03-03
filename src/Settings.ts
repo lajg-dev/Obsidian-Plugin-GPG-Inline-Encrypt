@@ -9,7 +9,7 @@ export interface GpgEncryptSettings {
 
 // Default settings values
 const DEFAULT_SETTINGS: GpgEncryptSettings = {
-    pgpExecPath: '/usr/local/bin/gpg',
+    pgpExecPath: getDefaultExecPath(),
     pgpSignPublicKeyId: "0",
     pgpAlwaysTrust: false
 }
@@ -33,5 +33,24 @@ export class Settings {
     // Save Settings to Plugin Data
     async saveSettings() {
         await this.plugin.saveData(this.plugin.settings);
+    }
+}
+
+// Get Default Exec Path in base on platform name
+function getDefaultExecPath(): string {
+    // Check platform name
+    switch (process.platform) {
+        // In case of Windows OS
+        case "win32":
+            return "C:\Program Files (x86)\GnuPG\bin\gpg.exe";
+        // In case of MacOS
+        case "darwin":
+            return "/usr/local/bin/gpg";
+        // In case of Linux
+        case "linux":
+            return "/usr/bin/gpg";
+        // In default value return empty
+        default:
+            return "";
     }
 }
