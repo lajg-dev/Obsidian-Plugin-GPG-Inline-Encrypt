@@ -214,13 +214,39 @@ export class GpgSettingsTab extends PluginSettingTab {
 			this.gpgPublicKeysList.descEl.removeChild(this.gpgPublicKeysList.descEl.firstChild);
 		}
 		// Add description in element
-		this.gpgPublicKeysList.setDesc("List of GPG public keys");
+		this.gpgPublicKeysList.setDesc("List of GPG public keys (Mark the keys that by default will be used for encryption).");
 		// Add spacer element to separate title/description and list of public keys
 		this.gpgPublicKeysList.descEl.createDiv().className = "div-spacer";
 		// Iterate over each public key
 		gpgPublicKeys.forEach((gpgPublicKey) => {
-			// Add public key as new element in list
-			this.gpgPublicKeysList.descEl.createDiv().setText("- (" + gpgPublicKey.keyID + ") " + gpgPublicKey.userID);
+			// A div is created for each element
+			let div : HTMLDivElement = this.gpgPublicKeysList.descEl.createDiv();
+			// An element of type setting is created that will have the toggle
+			let item: Setting = new Setting(div);
+			// The keyID is configured as Name
+			item.setName(gpgPublicKey.keyID);
+			// The userID is configured as a Desc
+			item.setDesc(gpgPublicKey.userID);
+			// Toggle is added to mark or unmark as default key
+			item.addToggle((toggle) => {
+				// Toggle component default value
+				toggle.setValue(this.plugin.settings.pgpDefaultEncryptKeys.indexOf(gpgPublicKey.keyID) > -1);
+				// Toggle component is created with onChange event
+				toggle.onChange(async (value: boolean) => {
+					// Check if change is true and value not exists in pgpDefaultEncryptKeys
+					if (value && this.plugin.settings.pgpDefaultEncryptKeys.indexOf(gpgPublicKey.keyID) == -1) {
+						// Add new publicKey in the list of default keys
+						this.plugin.settings.pgpDefaultEncryptKeys.push(gpgPublicKey.keyID);
+					}
+					// Check if change is false and value exists in pgpDefaultEncryptKeys
+					else if (!value && this.plugin.settings.pgpDefaultEncryptKeys.indexOf(gpgPublicKey.keyID) > -1) {
+						//Remove publicKey from list of default keys
+						this.plugin.settings.pgpDefaultEncryptKeys.remove(gpgPublicKey.keyID);
+					}
+					// Save settings with change
+					await new Settings(this.plugin).saveSettings();
+				});
+			});
 		});
 		// Show list of public GPG Keys
 		this.gpgPublicKeysList.settingEl.show();

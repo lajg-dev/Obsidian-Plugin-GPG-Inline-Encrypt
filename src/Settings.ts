@@ -4,14 +4,16 @@ import GpgEncryptPlugin from "main";
 export interface GpgEncryptSettings {
 	pgpExecPath: string;
 	pgpSignPublicKeyId: string
-    pgpAlwaysTrust: boolean
+    pgpAlwaysTrust: boolean,
+    pgpDefaultEncryptKeys: Array<string>
 }
 
 // Default settings values
 const DEFAULT_SETTINGS: GpgEncryptSettings = {
     pgpExecPath: getDefaultExecPath(),
     pgpSignPublicKeyId: "0",
-    pgpAlwaysTrust: false
+    pgpAlwaysTrust: false,
+    pgpDefaultEncryptKeys: []
 }
 
 // Settings class

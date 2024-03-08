@@ -65,20 +65,16 @@ export class EncryptModal extends Modal {
 		gpgPublicKeys.forEach((gpgPublicKey) => {
 			// Add public key as new element in list
             new Setting(contentEl).setName("(" + gpgPublicKey.keyID + ") " + gpgPublicKey.userID).addToggle((toggle) => {
-                // Toggle component default value is false
-                toggle.setValue(false);
+                //Set a default value variable
+                let defaultValue: boolean = this.plugin.settings.pgpDefaultEncryptKeys.indexOf(gpgPublicKey.keyID) > -1;
+                // Toggle component default value is getting from pgpDefaultEncryptKeys
+                toggle.setValue(defaultValue);
+                // Run toogle OnChange event
+                this.toogleOnChange(defaultValue, gpgPublicKey.keyID);
                 // Toggle component is created with onChange event
                 toggle.onChange((value: boolean) => {
-                    // If Toggle is selected
-                    if (value) {
-                        // Add KeyID to listPublicKeyToEncrypt list
-                        this.listPublicKeyToEncrypt.push(gpgPublicKey.keyID);
-                    }
-                    // If Toggle is unselected
-                    else {
-                        // Remove KeyID to listPublicKeyToEncrypt list
-                        this.listPublicKeyToEncrypt.remove(gpgPublicKey.keyID);
-                    }
+                    // Toogle OnChange event
+                    this.toogleOnChange(value, gpgPublicKey.keyID);
                 });
             });
             // Check if KeyId is same to Sign KeyId
@@ -112,6 +108,20 @@ export class EncryptModal extends Modal {
         // Clear element
 		contentEl.empty();
 	}
+
+    // Method that run when toogle OnChange event is called
+    private toogleOnChange(value: boolean, keyID: string) {
+        // If Toggle is selected
+        if (value) {
+            // Add KeyID to listPublicKeyToEncrypt list
+            this.listPublicKeyToEncrypt.push(keyID);
+        }
+        // If Toggle is unselected
+        else {
+            // Remove KeyID to listPublicKeyToEncrypt list
+            this.listPublicKeyToEncrypt.remove(keyID);
+        }
+    }
 
     // Method to encript text with previous configuration
     private async EncryptText() {
