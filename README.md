@@ -48,3 +48,8 @@ Step 3 - By clicking on the "Decrypt" button, the decryption process will begin,
 Step 4 - Once the decryption process has finished, you will have a green message with technical information about the process, but you will also have a text area with the decrypted text, here you can copy it using the "Copy Plain Text" button or directly restore the decrypted text to the note using the "Restore plain text to document" button
 
 ![Decrypt 3/3](img/Screenshot_07.png)
+
+## Credits
+
+- [obsidian-inline-encrypter](https://github.com/solargate/obsidian-inline-encrypter)
+- [obsidian-gpgCrypt](https://github.com/tejado/obsidian-gpgCrypt)
