@@ -3,7 +3,7 @@
 	"name": "GPG Encrypt",
 	"version": "1.0.8",
 	"minAppVersion": "0.15.0",
-	"description": "Plugin to encrypt partial text or complete notes using GPG technology, it is compatible with security keys such as YubiKey or traditional GPG encryption methods",
+	"description": "GPG encrypt inline text using hotkeys",
 	"author": "Luis Jaramillo",
 	"authorUrl": "https://www.lajg.dev",
 	"fundingUrl": "https://www.lajg.dev/donate/",
