@@ -26,7 +26,11 @@ export class GpgSettingsTab extends PluginSettingTab {
 	}
 	// List of settings objetcts
 	private gpgExecPath: Setting;
+	private gpgAditionalCommands: Setting;
+	private gpgAditionalCommandsBefore: Setting;
+	private gpgAditionalCommandsAfter: Setting;
 	private gpgExecPathStatus: HTMLDivElement;
+	private gpgAditionalCommandsWarning: HTMLDivElement;
 	private gpgPublicKeysList: Setting;
 	private gpgSignKeyId: Setting;
     // Display function in settings tabs
@@ -94,6 +98,31 @@ export class GpgSettingsTab extends PluginSettingTab {
 		// Call method to refresh list to Sign text
 		this.RefreshListSign(this.plugin.settings.pgpSignPublicKeyId != "0");
 		// ---------- GPG Key ID to Sign text ----------
+
+		// ---------- Aditional Commands ----------
+		this.gpgAditionalCommands = new Setting(containerEl)
+			.setName("Aditional commands")
+			.setDesc("Add custom commands to be executed before or after the gpg command calls")
+			.addToggle((toggle) => {
+				// Toggle component default value is false
+				toggle.setValue(this.plugin.settings.pgpAditionalCommands);
+				// Toggle component is created with onChange event
+				toggle.onChange((value: boolean) => {
+					// Call method to show/hide aditional commands
+					this.RefreshAditionalCommands(value);
+				});
+			});
+		// Div to show an advance users wraning
+		this.gpgAditionalCommandsWarning = this.gpgAditionalCommands.descEl.createDiv();
+		this.gpgAditionalCommandsWarning.setText('Warning: Only advance users');
+		// Change to red color
+		this.gpgAditionalCommandsWarning.className = "text-color-red";
+		// Create the Aditional Commands Before/After
+		this.gpgAditionalCommandsBefore = new Setting(containerEl);
+		this.gpgAditionalCommandsAfter = new Setting(containerEl);
+		// Call method to show/hide aditional commands
+		this.RefreshAditionalCommands(this.plugin.settings.pgpAditionalCommands);
+		// ---------- Aditional Commands ----------
 	}
 
 	// Function to check if GPG Path exits
@@ -292,5 +321,47 @@ export class GpgSettingsTab extends PluginSettingTab {
 			// Save settings with change
 			await new Settings(this.plugin).saveSettings();
 		}
+	}
+
+	// Function to refresh List of Sign Keys ID
+	private async RefreshAditionalCommands(aditionalCommands: boolean) {
+		// Clear gpgAditionalCommands setting
+		this.gpgAditionalCommandsBefore.clear();
+		this.gpgAditionalCommandsAfter.clear();
+		// Re-Create gpgAditionalCommands setting
+		this.gpgAditionalCommandsBefore.setName("Additional Commands (Before)");
+		this.gpgAditionalCommandsAfter.setName("Additional Commands (After)");
+		this.gpgAditionalCommandsBefore.setDesc("Enter the commands to be executed before running the gpg commands (Note: If you need to nest more than one command use &&, DO NOT include closing characters && as these will be added automatically)");
+		this.gpgAditionalCommandsAfter.setDesc("Enter the commands to be executed after running the gpg commands (Note: If you need to nest more than one command use &&, DO NOT include closing characters && as these will be added automatically)");
+		// Show or Hide gpgAditionalCommands settings according aditionalCommands flag
+		aditionalCommands ? this.gpgAditionalCommandsBefore.settingEl.show() : this.gpgAditionalCommandsBefore.settingEl.hide();
+		aditionalCommands ? this.gpgAditionalCommandsAfter.settingEl.show() : this.gpgAditionalCommandsAfter.settingEl.hide();
+		// Added the text inputs
+		this.gpgAditionalCommandsBefore.addText(text => text
+			.setPlaceholder('command')
+			.setValue(this.plugin.settings.pgpAditionalCommandsBefore)
+			.onChange(async (value: string) => {
+				// Set settig variable pgpAditionalCommandsBefore with new value
+				this.plugin.settings.pgpAditionalCommandsBefore = value;
+				// Save settings with change
+				await new Settings(this.plugin).saveSettings();
+				// Run a script to check gpg path with pgpAditionalCommandsBefore
+				await this.checkGpgPath(this.plugin.settings.pgpExecPath);
+			}));
+		this.gpgAditionalCommandsAfter.addText(text => text
+			.setPlaceholder('command')
+			.setValue(this.plugin.settings.pgpAditionalCommandsAfter)
+			.onChange(async (value: string) => {
+				// Set settig variable pgpAditionalCommandsAfter with new value
+				this.plugin.settings.pgpAditionalCommandsAfter = value;
+				// Save settings with change
+				await new Settings(this.plugin).saveSettings();
+				// Run a script to check gpg path with pgpAditionalCommandsAfter
+				await this.checkGpgPath(this.plugin.settings.pgpExecPath);
+			}));
+		// Set settig variable pgpAditionalCommands with new value
+		this.plugin.settings.pgpAditionalCommands = aditionalCommands;
+		// Save settings with change
+		await new Settings(this.plugin).saveSettings();
 	}
 }

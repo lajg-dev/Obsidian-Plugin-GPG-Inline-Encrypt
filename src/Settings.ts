@@ -5,7 +5,10 @@ export interface GpgEncryptSettings {
 	pgpExecPath: string;
 	pgpSignPublicKeyId: string
     pgpAlwaysTrust: boolean,
-    pgpDefaultEncryptKeys: Array<string>
+    pgpDefaultEncryptKeys: Array<string>,
+    pgpAditionalCommands: boolean,
+    pgpAditionalCommandsBefore: string,
+    pgpAditionalCommandsAfter: string
 }
 
 // Default settings values
@@ -13,7 +16,10 @@ const DEFAULT_SETTINGS: GpgEncryptSettings = {
     pgpExecPath: getDefaultExecPath(),
     pgpSignPublicKeyId: "0",
     pgpAlwaysTrust: false,
-    pgpDefaultEncryptKeys: []
+    pgpDefaultEncryptKeys: [],
+    pgpAditionalCommands: false,
+    pgpAditionalCommandsBefore: "",
+    pgpAditionalCommandsAfter: ""
 }
 
 // Settings class

@@ -34,12 +34,25 @@ export default function spawnGPG(settings: GpgEncryptSettings,  input: string | 
           // Create an empty args array
           args = [];
         }
+        let fullArgs: string[] = globalArgs.concat(args);
 
         // Initial variables
         const buffers: Buffer[] = [];
         let buffersLength = 0;
         let error = "";
-        const gpg = spawn(settings.pgpExecPath, globalArgs.concat(args));
+
+        let command = "";
+        if (settings.pgpAditionalCommands && settings.pgpAditionalCommandsBefore !== '') {
+          command = settings.pgpAditionalCommandsBefore + " && ";
+        }
+        command += settings.pgpExecPath;
+        fullArgs.forEach(arg => {
+          command += " " + arg;
+        });
+        if (settings.pgpAditionalCommands && settings.pgpAditionalCommandsAfter !== '') {
+          command += " && " + settings.pgpAditionalCommandsAfter;
+        }
+        const gpg = spawn(command, { shell: true });
     
         gpg.stdout.on("data", (buf: Buffer) => {
           buffers.push(buf);

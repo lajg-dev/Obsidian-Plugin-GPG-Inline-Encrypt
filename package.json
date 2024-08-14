@@ -1,7 +1,7 @@
 {
 	"name": "gpg-encrypt",
-	"version": "1.0.7",
-	"description": "GPG encrypt inline text using hotkeys",
+	"version": "1.0.8",
+	"description": "Plugin to encrypt partial text or complete notes using GPG technology, it is compatible with security keys such as YubiKey or traditional GPG encryption methods",
 	"main": "main.js",
 	"scripts": {
 		"dev": "node esbuild.config.mjs",
