@@ -8,7 +8,8 @@ export interface GpgEncryptSettings {
     pgpDefaultEncryptKeys: Array<string>,
     pgpAditionalCommands: boolean,
     pgpAditionalCommandsBefore: string,
-    pgpAditionalCommandsAfter: string
+    pgpAditionalCommandsAfter: string,
+    pgpAditionalCommandsConsole: boolean
 }
 
 // Default settings values
@@ -19,7 +20,8 @@ const DEFAULT_SETTINGS: GpgEncryptSettings = {
     pgpDefaultEncryptKeys: [],
     pgpAditionalCommands: false,
     pgpAditionalCommandsBefore: "",
-    pgpAditionalCommandsAfter: ""
+    pgpAditionalCommandsAfter: "",
+    pgpAditionalCommandsConsole: false
 }
 
 // Settings class

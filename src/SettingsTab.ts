@@ -29,6 +29,7 @@ export class GpgSettingsTab extends PluginSettingTab {
 	private gpgAditionalCommands: Setting;
 	private gpgAditionalCommandsBefore: Setting;
 	private gpgAditionalCommandsAfter: Setting;
+	private gpgAditionalCommandsConsole: Setting;
 	private gpgExecPathStatus: HTMLDivElement;
 	private gpgAditionalCommandsWarning: HTMLDivElement;
 	private gpgPublicKeysList: Setting;
@@ -120,6 +121,7 @@ export class GpgSettingsTab extends PluginSettingTab {
 		// Create the Aditional Commands Before/After
 		this.gpgAditionalCommandsBefore = new Setting(containerEl);
 		this.gpgAditionalCommandsAfter = new Setting(containerEl);
+		this.gpgAditionalCommandsConsole = new Setting(containerEl);
 		// Call method to show/hide aditional commands
 		this.RefreshAditionalCommands(this.plugin.settings.pgpAditionalCommands);
 		// ---------- Aditional Commands ----------
@@ -328,14 +330,18 @@ export class GpgSettingsTab extends PluginSettingTab {
 		// Clear gpgAditionalCommands setting
 		this.gpgAditionalCommandsBefore.clear();
 		this.gpgAditionalCommandsAfter.clear();
+		this.gpgAditionalCommandsConsole.clear();
 		// Re-Create gpgAditionalCommands setting
 		this.gpgAditionalCommandsBefore.setName("Additional Commands (Before)");
 		this.gpgAditionalCommandsAfter.setName("Additional Commands (After)");
+		this.gpgAditionalCommandsConsole.setName("Print command in Obsidian Developer Console");
 		this.gpgAditionalCommandsBefore.setDesc("Enter the commands to be executed before running the gpg commands (Note: If you need to nest more than one command use &&, DO NOT include closing characters && as these will be added automatically)");
 		this.gpgAditionalCommandsAfter.setDesc("Enter the commands to be executed after running the gpg commands (Note: If you need to nest more than one command use &&, DO NOT include closing characters && as these will be added automatically)");
+		this.gpgAditionalCommandsConsole.setDesc("Print whole command in the Obsidian Developer Console to debug (cmd+option+i Mac - ctrl+shift+i Windows)");
 		// Show or Hide gpgAditionalCommands settings according aditionalCommands flag
 		aditionalCommands ? this.gpgAditionalCommandsBefore.settingEl.show() : this.gpgAditionalCommandsBefore.settingEl.hide();
 		aditionalCommands ? this.gpgAditionalCommandsAfter.settingEl.show() : this.gpgAditionalCommandsAfter.settingEl.hide();
+		aditionalCommands ? this.gpgAditionalCommandsConsole.settingEl.show() : this.gpgAditionalCommandsConsole.settingEl.hide();
 		// Added the text inputs
 		this.gpgAditionalCommandsBefore.addText(text => text
 			.setPlaceholder('command')
@@ -359,6 +365,17 @@ export class GpgSettingsTab extends PluginSettingTab {
 				// Run a script to check gpg path with pgpAditionalCommandsAfter
 				await this.checkGpgPath(this.plugin.settings.pgpExecPath);
 			}));
+		this.gpgAditionalCommandsConsole.addToggle((toggle) => {
+			// Toggle component default value is false
+			toggle.setValue(this.plugin.settings.pgpAditionalCommandsConsole);
+			// Toggle component is created with onChange event
+			toggle.onChange(async (value: boolean) => {
+				// Set settig variable pgpAditionalCommandsConsole with new value
+				this.plugin.settings.pgpAditionalCommandsConsole = value;
+				// Save settings with change
+				await new Settings(this.plugin).saveSettings();
+			});
+		});
 		// Set settig variable pgpAditionalCommands with new value
 		this.plugin.settings.pgpAditionalCommands = aditionalCommands;
 		// Save settings with change

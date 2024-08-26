@@ -52,6 +52,9 @@ export default function spawnGPG(settings: GpgEncryptSettings,  input: string | 
         if (settings.pgpAditionalCommands && settings.pgpAditionalCommandsAfter !== '') {
           command += " && " + settings.pgpAditionalCommandsAfter;
         }
+        if (settings.pgpAditionalCommandsConsole) {
+          console.log(command);
+        }
         const gpg = spawn(command, { shell: true });
     
         gpg.stdout.on("data", (buf: Buffer) => {
@@ -78,6 +81,9 @@ export default function spawnGPG(settings: GpgEncryptSettings,  input: string | 
         });
     
         gpg.on("error", (err: any) => {
+          if (settings.pgpAditionalCommandsConsole) {
+            console.error(err);
+          }
           resolve({
             result: undefined,
             error: err
