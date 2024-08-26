@@ -45,7 +45,7 @@ export default function spawnGPG(settings: GpgEncryptSettings,  input: string | 
         if (settings.pgpAditionalCommands && settings.pgpAditionalCommandsBefore !== '') {
           command = settings.pgpAditionalCommandsBefore + " && ";
         }
-        command += settings.pgpExecPath;
+        command += "\"" + settings.pgpExecPath + "\"";
         fullArgs.forEach(arg => {
           command += " " + arg;
         });
