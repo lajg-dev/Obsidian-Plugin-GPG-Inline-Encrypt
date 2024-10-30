@@ -34,6 +34,7 @@ export class GpgSettingsTab extends PluginSettingTab {
 	private gpgAditionalCommandsWarning: HTMLDivElement;
 	private gpgPublicKeysList: Setting;
 	private gpgSignKeyId: Setting;
+	private gpgAlwaysTrust: Setting;
 	private gpgLibrary: Setting;
     // Display function in settings tabs
 	display(): void {
@@ -41,6 +42,27 @@ export class GpgSettingsTab extends PluginSettingTab {
 		const {containerEl} = this;
 		// Clear continer element
 		containerEl.empty();
+
+		// ---------- GPG Library ----------
+		this.gpgLibrary = new Setting(containerEl)
+			.setName("GPG Library")
+			.setDesc("Select which GPG library you want to use (Tip: If you want the app to work on mobile devices, use openpgpjs)")
+			.addDropdown((dropdown: DropdownComponent) => {
+				// Option to support openpgpjs
+				dropdown.addOption("openpgpjs", "openpgpjs");
+				// Option to use CLI commands
+				dropdown.addOption("cli", "CLI commands");
+				// Set the current settings value (default value is openpgpjs)
+				dropdown.setValue(this.plugin.settings.pgpLibrary);
+				// When value is change
+				dropdown.onChange((value: string) => {
+					// Set the new pgpLibrary value
+					this.plugin.settings.pgpLibrary = value;
+					// Call method to refresh library
+					this.RefreshLibrary(value);
+				})
+			});
+		// ---------- GPG Library ----------
 
 		// ---------- GPG executable setting ----------
 		this.gpgExecPath = new Setting(containerEl)
@@ -64,7 +86,7 @@ export class GpgSettingsTab extends PluginSettingTab {
 		// ---------- List of GPG Public Keys ----------
 
 		// ---------- Always Trust ----------
-		new Setting(containerEl)
+		this.gpgAlwaysTrust = new Setting(containerEl)
 		.setName("Always trust any key")
 		.setDesc("Always trust any used GPG key")
 		.addToggle((toggle) => {
@@ -101,27 +123,6 @@ export class GpgSettingsTab extends PluginSettingTab {
 		this.RefreshListSign(this.plugin.settings.pgpSignPublicKeyId != "0");
 		// ---------- GPG Key ID to Sign text ----------
 
-		// ---------- GPG Library ----------
-		this.gpgLibrary = new Setting(containerEl)
-			.setName("GPG Library")
-			.setDesc("Select which GPG library you want to use (Tip: If you want the app to work on mobile devices, use openpgpjs)")
-			.addDropdown((dropdown: DropdownComponent) => {
-				// Option to support openpgpjs
-				dropdown.addOption("openpgpjs", "openpgpjs");
-				// Option to use CLI commands
-				dropdown.addOption("cli", "CLI commands");
-				// Set the current settings value (default value is openpgpjs)
-				dropdown.setValue(this.plugin.settings.pgpLibrary);
-				// When value is change
-				dropdown.onChange((value: string) => {
-					// Set the new pgpLibrary value
-					this.plugin.settings.pgpLibrary = value;
-					// Call method to refresh library
-					this.RefreshLibrary(value);
-				})
-			});
-		// ---------- GPG Library ----------
-
 		// ---------- Aditional Commands ----------
 		this.gpgAditionalCommands = new Setting(containerEl)
 			.setName("Aditional commands")
@@ -153,6 +154,10 @@ export class GpgSettingsTab extends PluginSettingTab {
 
 	// Function to check if GPG Path exits
 	private async checkGpgPath(value: string) {
+		// Check if pgp Library is openpgpjs
+		if (this.plugin.settings.pgpLibrary == "openpgpjs")
+			// Abort the process
+			return;
 		// Set settig variable pgpExecPath with new value
 		this.plugin.settings.pgpExecPath = value;
 		// Save settings with change
@@ -411,15 +416,29 @@ export class GpgSettingsTab extends PluginSettingTab {
 		// Check if library is openpgpjs
 		if (value == "openpgpjs")
 		{
-			// And hide the aditional commands settings
-			this.gpgAditionalCommands.settingEl.hide();
 			// Set aditional commands to false when openpgpjs
 			this.plugin.settings.pgpAditionalCommands = false;
+			// And hide the aditional commands settings
+			this.gpgAditionalCommands.settingEl.hide();
+			this.gpgExecPath.settingEl.hide();
+			this.gpgPublicKeysList.settingEl.hide();
+			this.gpgSignKeyId.settingEl.hide();
+			this.gpgAlwaysTrust.settingEl.hide();
 		}
 		// Check if library is not openpgpjs
 		else
+		{
 			// And show the aditional commands settings
 			this.gpgAditionalCommands.settingEl.show();
+			this.gpgExecPath.settingEl.show();
+			this.gpgPublicKeysList.settingEl.show();
+			this.gpgAlwaysTrust.settingEl.show();
+			if (this.plugin.settings.pgpSignPublicKeyId != "0")
+				this.gpgSignKeyId.settingEl.show();
+
+
+			this.checkGpgPath(this.plugin.settings.pgpExecPath);
+		}
 
 		// Call method to show/hide aditional commands
 		this.RefreshAditionalCommands(this.plugin.settings.pgpAditionalCommands);
