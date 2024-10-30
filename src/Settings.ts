@@ -6,6 +6,7 @@ export interface GpgEncryptSettings {
 	pgpSignPublicKeyId: string
     pgpAlwaysTrust: boolean,
     pgpDefaultEncryptKeys: Array<string>,
+    pgpLibrary: string,
     pgpAditionalCommands: boolean,
     pgpAditionalCommandsBefore: string,
     pgpAditionalCommandsAfter: string,
@@ -18,6 +19,7 @@ const DEFAULT_SETTINGS: GpgEncryptSettings = {
     pgpSignPublicKeyId: "0",
     pgpAlwaysTrust: false,
     pgpDefaultEncryptKeys: [],
+    pgpLibrary: "openpgpjs",
     pgpAditionalCommands: false,
     pgpAditionalCommandsBefore: "",
     pgpAditionalCommandsAfter: "",

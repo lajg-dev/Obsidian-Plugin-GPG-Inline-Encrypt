@@ -1,5 +1,5 @@
 import spawnGPG, { GpgResult, getListPublicKey } from 'src/gpg';
-import { App, PluginSettingTab, Setting } from 'obsidian';
+import { App, DropdownComponent, PluginSettingTab, Setting } from 'obsidian';
 import GpgEncryptPlugin from 'main';
 import { Settings } from './Settings';
 let fs = require('fs');
@@ -34,6 +34,7 @@ export class GpgSettingsTab extends PluginSettingTab {
 	private gpgAditionalCommandsWarning: HTMLDivElement;
 	private gpgPublicKeysList: Setting;
 	private gpgSignKeyId: Setting;
+	private gpgLibrary: Setting;
     // Display function in settings tabs
 	display(): void {
 		// Container Element
@@ -100,6 +101,27 @@ export class GpgSettingsTab extends PluginSettingTab {
 		this.RefreshListSign(this.plugin.settings.pgpSignPublicKeyId != "0");
 		// ---------- GPG Key ID to Sign text ----------
 
+		// ---------- GPG Library ----------
+		this.gpgLibrary = new Setting(containerEl)
+			.setName("GPG Library")
+			.setDesc("Select which GPG library you want to use (Tip: If you want the app to work on mobile devices, use openpgpjs)")
+			.addDropdown((dropdown: DropdownComponent) => {
+				// Option to support openpgpjs
+				dropdown.addOption("openpgpjs", "openpgpjs");
+				// Option to use CLI commands
+				dropdown.addOption("cli", "CLI commands");
+				// Set the current settings value (default value is openpgpjs)
+				dropdown.setValue(this.plugin.settings.pgpLibrary);
+				// When value is change
+				dropdown.onChange((value: string) => {
+					// Set the new pgpLibrary value
+					this.plugin.settings.pgpLibrary = value;
+					// Call method to refresh library
+					this.RefreshLibrary(value);
+				})
+			});
+		// ---------- GPG Library ----------
+
 		// ---------- Aditional Commands ----------
 		this.gpgAditionalCommands = new Setting(containerEl)
 			.setName("Aditional commands")
@@ -122,6 +144,8 @@ export class GpgSettingsTab extends PluginSettingTab {
 		this.gpgAditionalCommandsBefore = new Setting(containerEl);
 		this.gpgAditionalCommandsAfter = new Setting(containerEl);
 		this.gpgAditionalCommandsConsole = new Setting(containerEl);
+		// Call method to refresh library
+		this.RefreshLibrary(this.plugin.settings.pgpLibrary);
 		// Call method to show/hide aditional commands
 		this.RefreshAditionalCommands(this.plugin.settings.pgpAditionalCommands);
 		// ---------- Aditional Commands ----------
@@ -380,5 +404,24 @@ export class GpgSettingsTab extends PluginSettingTab {
 		this.plugin.settings.pgpAditionalCommands = aditionalCommands;
 		// Save settings with change
 		await new Settings(this.plugin).saveSettings();
+	}
+
+	// Function to refresh pgp library
+	private RefreshLibrary(value: string) {
+		// Check if library is openpgpjs
+		if (value == "openpgpjs")
+		{
+			// And hide the aditional commands settings
+			this.gpgAditionalCommands.settingEl.hide();
+			// Set aditional commands to false when openpgpjs
+			this.plugin.settings.pgpAditionalCommands = false;
+		}
+		// Check if library is not openpgpjs
+		else
+			// And show the aditional commands settings
+			this.gpgAditionalCommands.settingEl.show();
+
+		// Call method to show/hide aditional commands
+		this.RefreshAditionalCommands(this.plugin.settings.pgpAditionalCommands);
 	}
 }
