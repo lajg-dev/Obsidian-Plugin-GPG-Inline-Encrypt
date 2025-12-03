@@ -66,36 +66,48 @@ export class DecryptModal extends Modal {
 
     // Function to replace the encrypted with plaintext
     replaceEncryptedTextWithPlainText(from: number, to: number, editor: Editor) {
-        // Document total character count
-        let lineSum: number = 0;
-        // The number of lines that the current document has is counted.
-        let lineCount: number = editor.lineCount();
-        // It is iterated line by line until the current document is finished.
-        for (let lineNum = 0; lineNum < lineCount; lineNum++) {
-            // The current line is obtained
-            const lineTxt = editor.getLine(lineNum);
-            // The number of characters in the current line is calculated.
-            const lineLenght = lineTxt.length;
-            // It is validated that the characters of the previous lines plus the characters of the current line are greater than the characters of FROM and TO
-            if (lineSum + lineLenght > from && lineSum + lineLenght > to) {
-                // The FROM position is calculated minus the characters already added from the previous lines minus 1 character to count the inline-code quote.
-                let editorPositionFrom: EditorPosition = { ch: from - lineSum - 1, line: lineNum };
-                // The TO position is calculated minus the characters already added from the previous lines plus 1 character to count the inline-code quote.
-                let editorPositionTo: EditorPosition = { ch: to - lineSum + 1, line: lineNum };
-                // The decrypted text is replaced according to the previous calculations.
-                editor.replaceRange(this.plainText, editorPositionFrom, editorPositionTo)
-                // The for is broken to deliver the result and not continue calculating
+        // Get the full document text
+        const fullText = editor.getValue();
+        // Extract the encrypted text based on from and to positions
+        const encryptedText = fullText.substring(from, to);
+        // Search for this exact encrypted text in the document using a more robust approach
+        const lines = editor.getValue().split('\n');
+        let charCount = 0;
+        // Iterate through lines to find the correct position
+        for (let lineNum = 0; lineNum < lines.length; lineNum++) {
+            const line = lines[lineNum];
+            const lineStart = charCount;
+            const lineEnd = charCount + line.length;
+            // Check if the encrypted text is within this line
+            if (lineStart <= from && lineEnd >= to) {
+                // Calculate positions within the line
+                const chFrom = from - lineStart;
+                const chTo = to - lineStart;
+                // Create editor positions
+                const editorPositionFrom: EditorPosition = { ch: chFrom, line: lineNum };
+                const editorPositionTo: EditorPosition = { ch: chTo, line: lineNum };
+                // Replace the encrypted text with plain text
+                editor.replaceRange(this.plainText, editorPositionFrom, editorPositionTo);
+                // Success notification
+                new Notice("Plain text restored successfully!");
                 return;
             }
-            // In case the characters of the previous lines plus the characters of the current line still do not reach the characters of FROM and TO,
-            // it means that this line is not and we continue with the next line
-            else {
-                // The number of characters on the current line plus 1 carriage return character is added to the sum of the total characters.
-                lineSum += lineLenght + 1;
-            }
+            // Add line length + 1 for the newline character
+            charCount += line.length + 1;
+        }
+        // If we couldn't find it by position, try to find the pattern
+        const pattern = new RegExp('`' + encryptedText.replace(/[.*+?^${}()|[\]\\]/g, '\\$&') + '`', 'g');
+        const fullTextWithPattern = editor.getValue();
+        // Check if pattern exists
+        if (pattern.test(fullTextWithPattern)) {
+            // Replace using string replacement
+            const newText = fullTextWithPattern.replace(pattern, this.plainText);
+            editor.setValue(newText);
+            new Notice("Plain text restored successfully!");
+            return;
         }
         // Error message
-        new Notice("The encrypted text was not found in the current document")
+        new Notice("The encrypted text was not found in the current document");
     }
 
     // Organize out text into code elements

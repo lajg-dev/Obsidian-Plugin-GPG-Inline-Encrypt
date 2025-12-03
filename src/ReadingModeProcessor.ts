@@ -24,11 +24,25 @@ export const registerReadingModeProcessor = (app: App, plugin: GpgEncryptPlugin)
                 decryptButton.addClass('gpg-decrypt-a');
                 
                 // Add click event to open decrypt modal
-                decryptButton.addEventListener('click', () => {
-                    // Open Decrypt Modal
-                    // Note: In reading mode, we don't have the exact from/to positions
-                    // so we pass 0, 0 as placeholders since they're not used for display
-                    new DecryptPreviewModal(app, text, plugin, 0, 0).open();
+                decryptButton.addEventListener('click', async () => {
+                    // Get the source text and calculate positions
+                    let matchStart = 0;
+                    let matchEnd = 0;
+                    
+                    // Try to get file content and find positions
+                    const file = app.workspace.getActiveFile();
+                    if (file) {
+                        const content = await app.vault.read(file);
+                        const pattern = new RegExp(`\`${text.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')}\``);
+                        const match = pattern.exec(content);
+                        
+                        if (match && match.index !== undefined) {
+                            matchStart = match.index;
+                            matchEnd = matchStart + match[0].length;
+                        }
+                    }
+                    // Open Decrypt Modal with calculated positions
+                    new DecryptPreviewModal(app, text, plugin, matchStart, matchEnd).open();
                 });
                 
                 // Add the button to wrapper

@@ -1,9 +1,7 @@
 import { EditorView, ViewPlugin, ViewUpdate, Decoration, DecorationSet, WidgetType } from '@codemirror/view';
-import { GPG_INLINE_ENCRYPT_PREFIX } from "./EncryptModal";
 import { App, editorLivePreviewField } from "obsidian";
 import type { PluginValue, } from '@codemirror/view';
 import { RangeSetBuilder } from '@codemirror/state';
-import { syntaxTree } from "@codemirror/language";
 import { DecryptPreviewModal } from './DecryptPreviewModal';
 import GpgEncryptPlugin from 'main';
 
