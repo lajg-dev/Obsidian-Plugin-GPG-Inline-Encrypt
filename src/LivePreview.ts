@@ -67,25 +67,24 @@ export const livePreviewExtensionGpgEncrypt = (app: App, plugin: GpgEncryptPlugi
         const builder = new RangeSetBuilder<Decoration>();
         // Iterate over each visible ranges
         for (const { from, to } of view.visibleRanges) {
-            // Iterate over each state
-            syntaxTree(view.state).iterate({ from, to, enter(node: any) {
-                // Check if type of line is a inline-code
-                if (node.type.name.startsWith("inline-code")) {
-                    // Get value of this inline-code
-                    const value = view.state.doc.sliceString(node.from, node.to)
-                    // Check if this line start with GPG Inline Encrypt Prefix and mark isEncrypted as true
-                    const isEncrypted = value.indexOf(GPG_INLINE_ENCRYPT_PREFIX) === 0;
-                    // Check if isEncrypted is true
-                    if (isEncrypted) {
-                        // Replace the decoration for EncryptedWidget
-                        builder.add(node.from, node.to,
-                            Decoration.replace({
-                                widget: new EncryptedWidget(app, value, plugin, node.from, node.to)
-                            })
-                        );
-                    }
-                }
-            }});
+            // Get the text content to search for inline code patterns
+            const text = view.state.doc.sliceString(from, to);
+            const codePattern = /`(gpg-base-64[^`]+)`/g;
+            let match;
+            
+            // Search for all inline code patterns with encrypted text
+            while ((match = codePattern.exec(text)) !== null) {
+                const matchStart = from + match.index;
+                const matchEnd = matchStart + match[0].length;
+                const encryptedValue = match[1]; // Content without backticks
+                
+                // Replace the decoration for EncryptedWidget
+                builder.add(matchStart, matchEnd,
+                    Decoration.replace({
+                        widget: new EncryptedWidget(app, encryptedValue, plugin, matchStart, matchEnd)
+                    })
+                );
+            }
         }
         return builder.finish();
     }
