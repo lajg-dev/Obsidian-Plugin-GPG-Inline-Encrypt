@@ -1,6 +1,6 @@
 {
 	"name": "gpg-encrypt",
-	"version": "1.1.4",
+	"version": "1.1.5",
 	"description": "Plugin to encrypt partial text or complete notes using GPG technology, it is compatible with security keys such as YubiKey or traditional GPG encryption methods",
 	"main": "main.js",
 	"scripts": {
