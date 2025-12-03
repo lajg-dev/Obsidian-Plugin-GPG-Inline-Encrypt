@@ -1,4 +1,4 @@
-import { App, Editor, EditorPosition, Modal, Notice, Setting } from "obsidian";
+import { App, Editor, EditorPosition, MarkdownView, Modal, Notice, Setting } from "obsidian";
 import GpgEncryptPlugin from "main";
 
 // Decrypt modal (Works for inline and document encryption)
@@ -41,6 +41,13 @@ export class DecryptModal extends Modal {
         if (this.app.workspace.activeEditor && this.app.workspace.activeEditor.editor) {
             // Button restore to document
             buttons.addButton((btn) => btn.setButtonText("Restore plain text to document").setCta().onClick(async() => {
+                // Check if the view is in reading mode
+                const activeView = this.app.workspace.getActiveViewOfType(MarkdownView);
+                if (activeView && activeView.getMode() === "preview") {
+                    // Error message for reading mode
+                    new Notice("Cannot restore plain text in reading mode. Please switch to Live Preview mode to restore the text.");
+                    return;
+                }
                 // Check if activeEditor or editor are available
                 if (this.app.workspace.activeEditor && this.app.workspace.activeEditor.editor) {
                     // The function to replace the encrypted with plaintext is executed
