@@ -1,12 +1,12 @@
-import { spawn } from "child_process";
 import { GpgEncryptSettings } from "./Settings";
+import * as openpgpBackend from "./openpgp";
 
 // Default and Global Args
 const globalArgs: string[] = ["--batch"];
 
 // Object that is returned when spawnGPG method is called
 export interface GpgResult {
-    result?: Buffer;
+    result?: Buffer | string;
     error?: Error;
 }
 
@@ -55,6 +55,8 @@ export default function spawnGPG(settings: GpgEncryptSettings,  input: string | 
         if (settings.pgpAditionalCommandsConsole) {
           console.log(command);
         }
+        // Lazy require so the module still loads on mobile, where child_process is absent
+        const { spawn } = require("child_process");
         const gpg = spawn(command, { shell: true });
     
         gpg.stdout.on("data", (buf: Buffer) => {
@@ -105,8 +107,18 @@ export default function spawnGPG(settings: GpgEncryptSettings,  input: string | 
     });
 }
 
-// Get list of all Public Key availables
+// Get list of all Public Key availables (routes to the selected library)
 export async function getListPublicKey(settings: GpgEncryptSettings): Promise<{ keyID: string; userID: string }[]> {
+  // When openpgpjs is selected, use the OpenPGP.js backend
+  if (settings.pgpLibrary === "openpgpjs") {
+    return openpgpBackend.getListPublicKey(settings);
+  }
+  // Otherwise use the native GPG executable
+  return nativeGetListPublicKey(settings);
+}
+
+// Get list of all Public Key availables using the native GPG executable
+async function nativeGetListPublicKey(settings: GpgEncryptSettings): Promise<{ keyID: string; userID: string }[]> {
   // Build the executable and args
   const gpgResult: GpgResult  = await spawnGPG(settings, null, ["--logger-fd", "1", "--list-public-keys", "--with-colons"]);
   // Check if result are null
@@ -141,8 +153,18 @@ export async function getListPublicKey(settings: GpgEncryptSettings): Promise<{ 
   return keys;
 }
 
-// Function to encrypt a plainText with a list of GPG public keys ID
-export async function gpgEncrypt(settings: GpgEncryptSettings, plainText:string, publicKeyIds: string[], signPublicKeyId: string): Promise<GpgResult> {
+// Function to encrypt a plainText with a list of GPG public keys ID (routes to the selected library)
+export async function gpgEncrypt(settings: GpgEncryptSettings, plainText:string, publicKeyIds: string[], signPublicKeyId: string, passphrase?: string | null): Promise<GpgResult> {
+  // When openpgpjs is selected, use the OpenPGP.js backend
+  if (settings.pgpLibrary === "openpgpjs") {
+    return openpgpBackend.gpgEncrypt(settings, plainText, publicKeyIds, signPublicKeyId, passphrase);
+  }
+  // Otherwise use the native GPG executable
+  return nativeGpgEncrypt(settings, plainText, publicKeyIds, signPublicKeyId);
+}
+
+// Function to encrypt a plainText using the native GPG executable
+async function nativeGpgEncrypt(settings: GpgEncryptSettings, plainText:string, publicKeyIds: string[], signPublicKeyId: string): Promise<GpgResult> {
   // Check if at least one public key is selected
   if (publicKeyIds.length <= 0) {
     // And return with error message
@@ -186,8 +208,18 @@ export async function gpgEncrypt(settings: GpgEncryptSettings, plainText:string,
 }
 
 
-// Function to decrypt an encrypted text with a private key
-export async function gpgDecrypt(settings: GpgEncryptSettings, encryptedText:string): Promise<GpgResult> {
+// Function to decrypt an encrypted text with a private key (routes to the selected library)
+export async function gpgDecrypt(settings: GpgEncryptSettings, encryptedText:string, passphrase?: string | null): Promise<GpgResult> {
+  // When openpgpjs is selected, use the OpenPGP.js backend
+  if (settings.pgpLibrary === "openpgpjs") {
+    return openpgpBackend.gpgDecrypt(settings, encryptedText, passphrase);
+  }
+  // Otherwise use the native GPG executable
+  return nativeGpgDecrypt(settings, encryptedText);
+}
+
+// Function to decrypt an encrypted text using the native GPG executable
+async function nativeGpgDecrypt(settings: GpgEncryptSettings, encryptedText:string): Promise<GpgResult> {
   // List of Args before publicKeyIds
   let args: string[] = ["--decrypt"].concat(AditionalArgs(settings));
   // Build the executable and args

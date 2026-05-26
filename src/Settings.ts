@@ -10,7 +10,12 @@ export interface GpgEncryptSettings {
     pgpAditionalCommands: boolean,
     pgpAditionalCommandsBefore: string,
     pgpAditionalCommandsAfter: string,
-    pgpAditionalCommandsConsole: boolean
+    pgpAditionalCommandsConsole: boolean,
+    // OpenPGP.js library settings (used when pgpLibrary === "openpgpjs")
+    pgpPublicKeyArmored: string,
+    pgpPrivateKeyArmored: string,
+    pgpPassphrase: string,
+    pgpPassphraseCacheMinutes: number
 }
 
 // Default settings values
@@ -23,7 +28,12 @@ const DEFAULT_SETTINGS: GpgEncryptSettings = {
     pgpAditionalCommands: false,
     pgpAditionalCommandsBefore: "",
     pgpAditionalCommandsAfter: "",
-    pgpAditionalCommandsConsole: false
+    pgpAditionalCommandsConsole: false,
+    // OpenPGP.js library settings
+    pgpPublicKeyArmored: "",
+    pgpPrivateKeyArmored: "",
+    pgpPassphrase: "",
+    pgpPassphraseCacheMinutes: 5
 }
 
 // Settings class
@@ -50,6 +60,10 @@ export class Settings {
 
 // Get Default Exec Path in base on platform name
 function getDefaultExecPath(): string {
+    // On mobile there is no Node process; return empty (native GPG is unavailable there)
+    if (typeof process === "undefined" || !process.platform) {
+        return "";
+    }
     // Check platform name
     switch (process.platform) {
         // In case of Windows OS

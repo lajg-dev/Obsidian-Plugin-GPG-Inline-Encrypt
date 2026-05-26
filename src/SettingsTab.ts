@@ -2,7 +2,6 @@ import spawnGPG, { GpgResult, getListPublicKey } from 'src/gpg';
 import { App, DropdownComponent, PluginSettingTab, Setting } from 'obsidian';
 import GpgEncryptPlugin from 'main';
 import { Settings } from './Settings';
-let fs = require('fs');
 
 // Enum of types of GPG executable path status
 enum GpgExecPathStatus {
@@ -34,8 +33,11 @@ export class GpgSettingsTab extends PluginSettingTab {
 	private gpgAditionalCommandsWarning: HTMLDivElement;
 	private gpgPublicKeysList: Setting;
 	private gpgSignKeyId: Setting;
+	private gpgSignText: Setting;
 	private gpgAlwaysTrust: Setting;
 	private gpgLibrary: Setting;
+	private openpgpSettingsEl: HTMLDivElement;
+	private openpgpKeyInfoEl: HTMLDivElement;
     // Display function in settings tabs
 	display(): void {
 		// Container Element
@@ -63,6 +65,10 @@ export class GpgSettingsTab extends PluginSettingTab {
 				})
 			});
 		// ---------- GPG Library ----------
+
+		// ---------- OpenPGP.js settings (populated by RefreshLibrary) ----------
+		this.openpgpSettingsEl = containerEl.createDiv();
+		// ---------- OpenPGP.js settings ----------
 
 		// ---------- GPG executable setting ----------
 		this.gpgExecPath = new Setting(containerEl)
@@ -103,7 +109,7 @@ export class GpgSettingsTab extends PluginSettingTab {
 		// ---------- Always Trust ----------
 
 		// ---------- Sign text ----------
-		new Setting(containerEl)
+		this.gpgSignText = new Setting(containerEl)
 			.setName("Sign encrypted text")
 			.setDesc("Sign the encrypted text with GPG")
 			.addToggle((toggle) => {
@@ -158,6 +164,8 @@ export class GpgSettingsTab extends PluginSettingTab {
 		if (this.plugin.settings.pgpLibrary == "openpgpjs")
 			// Abort the process
 			return;
+		// Lazy require so the settings tab still loads on mobile, where fs is absent
+		const fs = require('fs');
 		// Set settig variable pgpExecPath with new value
 		this.plugin.settings.pgpExecPath = value;
 		// Save settings with change
@@ -423,15 +431,21 @@ export class GpgSettingsTab extends PluginSettingTab {
 			this.gpgExecPath.settingEl.hide();
 			this.gpgPublicKeysList.settingEl.hide();
 			this.gpgSignKeyId.settingEl.hide();
+			this.gpgSignText.settingEl.hide();
 			this.gpgAlwaysTrust.settingEl.hide();
+			// Render the OpenPGP.js settings (armored keys, passphrase, cache)
+			this.renderOpenpgpSettings();
 		}
 		// Check if library is not openpgpjs
 		else
 		{
+			// Clear the OpenPGP.js settings
+			this.openpgpSettingsEl.empty();
 			// And show the aditional commands settings
 			this.gpgAditionalCommands.settingEl.show();
 			this.gpgExecPath.settingEl.show();
 			this.gpgPublicKeysList.settingEl.show();
+			this.gpgSignText.settingEl.show();
 			this.gpgAlwaysTrust.settingEl.show();
 			if (this.plugin.settings.pgpSignPublicKeyId != "0")
 				this.gpgSignKeyId.settingEl.show();
@@ -442,5 +456,104 @@ export class GpgSettingsTab extends PluginSettingTab {
 
 		// Call method to show/hide aditional commands
 		this.RefreshAditionalCommands(this.plugin.settings.pgpAditionalCommands);
+	}
+
+	// Render the OpenPGP.js settings (armored keys, passphrase, cache, key info)
+	private renderOpenpgpSettings() {
+		// Clear previous content
+		const el = this.openpgpSettingsEl;
+		el.empty();
+
+		// ---------- Public Key (Armored) ----------
+		new Setting(el)
+			.setName("Public Key (Armored)")
+			.setDesc("Paste your ASCII-armored GPG public key here. Used for encryption.");
+		const publicKeyArea = el.createEl("textarea", { cls: "gpg-key-textarea" });
+		publicKeyArea.placeholder = "-----BEGIN PGP PUBLIC KEY BLOCK-----\n...\n-----END PGP PUBLIC KEY BLOCK-----";
+		publicKeyArea.value = this.plugin.settings.pgpPublicKeyArmored || "";
+		publicKeyArea.rows = 6;
+		publicKeyArea.addEventListener("change", async () => {
+			this.plugin.settings.pgpPublicKeyArmored = publicKeyArea.value;
+			await new Settings(this.plugin).saveSettings();
+			this.refreshKeyInfo();
+		});
+
+		// ---------- Private Key (Armored) ----------
+		new Setting(el)
+			.setName("Private Key (Armored)")
+			.setDesc("Paste your ASCII-armored GPG private key here. Used for decryption. Stored locally in plugin data.");
+		const privateKeyArea = el.createEl("textarea", { cls: "gpg-key-textarea" });
+		privateKeyArea.placeholder = "-----BEGIN PGP PRIVATE KEY BLOCK-----\n...\n-----END PGP PRIVATE KEY BLOCK-----";
+		privateKeyArea.value = this.plugin.settings.pgpPrivateKeyArmored || "";
+		privateKeyArea.rows = 6;
+		privateKeyArea.addEventListener("change", async () => {
+			this.plugin.settings.pgpPrivateKeyArmored = privateKeyArea.value;
+			await new Settings(this.plugin).saveSettings();
+		});
+
+		// ---------- Passphrase (optional) ----------
+		new Setting(el)
+			.setName("Private Key Passphrase (optional)")
+			.setDesc("Save passphrase to disk for auto-decrypt. Leave blank to be prompted each time (recommended).")
+			.addText((text) => {
+				text.setPlaceholder("leave blank to prompt")
+					.setValue(this.plugin.settings.pgpPassphrase || "")
+					.onChange(async (value: string) => {
+						this.plugin.settings.pgpPassphrase = value;
+						await new Settings(this.plugin).saveSettings();
+					});
+				text.inputEl.type = "password";
+			});
+
+		// ---------- Passphrase cache duration ----------
+		new Setting(el)
+			.setName("Passphrase cache duration (minutes)")
+			.setDesc("How long to remember the passphrase in memory after entering it. Set to 0 to prompt every time.")
+			.addText((text) => text
+				.setPlaceholder("5")
+				.setValue(String(this.plugin.settings.pgpPassphraseCacheMinutes ?? 5))
+				.onChange(async (value: string) => {
+					this.plugin.settings.pgpPassphraseCacheMinutes = parseInt(value) || 0;
+					await new Settings(this.plugin).saveSettings();
+				}));
+
+		// ---------- Key info ----------
+		this.openpgpKeyInfoEl = el.createDiv();
+		this.refreshKeyInfo();
+
+		// ---------- Sign when encrypting ----------
+		new Setting(el)
+			.setName("Sign when encrypting")
+			.setDesc("Sign the encrypted text with your private key")
+			.addToggle((toggle) => {
+				toggle.setValue(this.plugin.settings.pgpSignPublicKeyId !== "0");
+				toggle.onChange(async (value: boolean) => {
+					this.plugin.settings.pgpSignPublicKeyId = value ? "sign" : "0";
+					await new Settings(this.plugin).saveSettings();
+				});
+			});
+	}
+
+	// Refresh the OpenPGP.js public key info readout
+	private async refreshKeyInfo() {
+		// Nothing to do if the info element is not present
+		if (!this.openpgpKeyInfoEl) return;
+		this.openpgpKeyInfoEl.empty();
+		// Only show info when a public key is configured
+		if (!this.plugin.settings.pgpPublicKeyArmored || this.plugin.settings.pgpPublicKeyArmored.trim() === "") {
+			return;
+		}
+		try {
+			const keys = await getListPublicKey(this.plugin.settings);
+			if (keys.length > 0) {
+				const infoEl = this.openpgpKeyInfoEl.createDiv();
+				infoEl.className = "text-color-green";
+				infoEl.setText("✅ Public key loaded: " + keys.map((k) => k.userID + " (" + k.keyID + ")").join(", "));
+			}
+		} catch (ex: any) {
+			const errEl = this.openpgpKeyInfoEl.createDiv();
+			errEl.className = "text-color-red";
+			errEl.setText("❌ Error reading public key: " + ex.message);
+		}
 	}
 }
