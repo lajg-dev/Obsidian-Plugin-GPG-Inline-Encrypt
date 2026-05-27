@@ -1,7 +1,8 @@
 import { GpgResult, getListPublicKey, gpgEncrypt } from "src/gpg";
 import { App, Editor, MarkdownView, Modal, Notice, Setting } from "obsidian";
 import GpgEncryptPlugin from 'main';
-import { utf8ToBase64 } from "./openpgp";
+import { utf8ToBase64, getPassphrase, setCachedPassphrase } from "./openpgp";
+import { PassphraseModal } from "./PassphraseModal";
 
 // Enum to identify encrypt modal mode
 export enum EncryptModalMode {
@@ -152,10 +153,20 @@ export class EncryptModal extends Modal {
 
     // Method to encript text with previous configuration
     private async EncryptText() {
+        // For openpgpjs with signing enabled, resolve the passphrase before encrypting
+        let passphrase: string | null = null;
+        if (this.plugin.settings.pgpLibrary === "openpgpjs" && this.plugin.settings.pgpSignPublicKeyId !== "0") {
+            passphrase = getPassphrase(this.plugin.settings);
+            if (!passphrase) {
+                passphrase = await PassphraseModal.prompt(this.app);
+                // User cancelled the passphrase prompt
+                if (!passphrase) return;
+            }
+        }
         // Check if EncryptMode is Inline
         if (this.encryptMode == EncryptModalMode.INLINE) {
             // Send Encrypt command with list of GPG public keys IDs
-            let encryptedTextResult: GpgResult = await gpgEncrypt(this.plugin.settings, this.editor.getSelection(), this.listPublicKeyToEncrypt, this.plugin.settings.pgpSignPublicKeyId);
+            let encryptedTextResult: GpgResult = await gpgEncrypt(this.plugin.settings, this.editor.getSelection(), this.listPublicKeyToEncrypt, this.plugin.settings.pgpSignPublicKeyId, passphrase);
             // Check if any error exists
             if (encryptedTextResult.error) {
                 // Show the error message
@@ -163,6 +174,10 @@ export class EncryptModal extends Modal {
             }
             // In case of no error happend
             else {
+                // Cache the passphrase after a successful sign+encrypt
+                if (passphrase) {
+                    setCachedPassphrase(passphrase, (this.plugin.settings.pgpPassphraseCacheMinutes || 5) * 60 * 1000);
+                }
                 // Replace encrypted text in selection
                 this.editor.replaceSelection(this.ToSecretBase64(encryptedTextResult.result!));
                 // Close this modal
@@ -172,9 +187,13 @@ export class EncryptModal extends Modal {
         // Check if EncryptMode is Document
         else if (this.encryptMode == EncryptModalMode.DOCUMENT) {
             // Send Encrypt command with list of GPG public keys IDs
-            let encryptedTextResult: GpgResult = await gpgEncrypt(this.plugin.settings, this.editor.getValue(), this.listPublicKeyToEncrypt, this.plugin.settings.pgpSignPublicKeyId);
+            let encryptedTextResult: GpgResult = await gpgEncrypt(this.plugin.settings, this.editor.getValue(), this.listPublicKeyToEncrypt, this.plugin.settings.pgpSignPublicKeyId, passphrase);
             // Check if result contains data
             if (encryptedTextResult.result) {
+                // Cache the passphrase after a successful sign+encrypt
+                if (passphrase) {
+                    setCachedPassphrase(passphrase, (this.plugin.settings.pgpPassphraseCacheMinutes || 5) * 60 * 1000);
+                }
                 // Replace encrypted text in selection
                 this.editor.setValue(this.ToSecretBase64(encryptedTextResult.result));
                 // Close this modal

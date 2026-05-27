@@ -38,6 +38,7 @@ export class GpgSettingsTab extends PluginSettingTab {
 	private gpgLibrary: Setting;
 	private openpgpSettingsEl: HTMLDivElement;
 	private openpgpKeyInfoEl: HTMLDivElement;
+	private signListGeneration = 0;
     // Display function in settings tabs
 	display(): void {
 		// Container Element
@@ -57,9 +58,11 @@ export class GpgSettingsTab extends PluginSettingTab {
 				// Set the current settings value (default value is openpgpjs)
 				dropdown.setValue(this.plugin.settings.pgpLibrary);
 				// When value is change
-				dropdown.onChange((value: string) => {
+				dropdown.onChange(async (value: string) => {
 					// Set the new pgpLibrary value
 					this.plugin.settings.pgpLibrary = value;
+					// Persist the library choice immediately so it survives a reload
+					await new Settings(this.plugin).saveSettings();
 					// Call method to refresh library
 					this.RefreshLibrary(value);
 				})
@@ -322,6 +325,8 @@ export class GpgSettingsTab extends PluginSettingTab {
 
 	// Function to refresh List of Sign Keys ID
 	private async RefreshListSign(requireSign: boolean) {
+		// Capture a generation token so stale async calls can be discarded
+		const generation = ++this.signListGeneration;
 		// Clear gpgSignKeyId setting
 		this.gpgSignKeyId.clear();
 		// Re-Create gpgSignKeyId setting
@@ -333,6 +338,8 @@ export class GpgSettingsTab extends PluginSettingTab {
 		if (requireSign) {
 			// Get list of GPG public Keys
 			let gpgPublicKeys: { keyID: string; userID: string }[] = await getListPublicKey(this.plugin.settings);
+			// Discard result if a newer call has already started
+			if (generation !== this.signListGeneration) return;
 			// Clear all DropDown items
 			this.gpgSignKeyId.addDropdown(dropDown => {
 				// Add empty key as new element in list
@@ -447,9 +454,13 @@ export class GpgSettingsTab extends PluginSettingTab {
 			this.gpgPublicKeysList.settingEl.show();
 			this.gpgSignText.settingEl.show();
 			this.gpgAlwaysTrust.settingEl.show();
-			if (this.plugin.settings.pgpSignPublicKeyId != "0")
-				this.gpgSignKeyId.settingEl.show();
-
+			// "sign" is the openpgpjs-only sentinel — reset it when switching to native CLI
+			if (this.plugin.settings.pgpSignPublicKeyId === "sign") {
+				this.plugin.settings.pgpSignPublicKeyId = "0";
+				new Settings(this.plugin).saveSettings();
+			}
+			// Repopulate sign key dropdown with native GPG keys
+			this.RefreshListSign(this.plugin.settings.pgpSignPublicKeyId != "0");
 
 			this.checkGpgPath(this.plugin.settings.pgpExecPath);
 		}
