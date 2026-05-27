@@ -1,6 +1,7 @@
 import { GpgResult, getListPublicKey, gpgEncrypt } from "src/gpg";
 import { App, Editor, MarkdownView, Modal, Notice, Setting } from "obsidian";
 import GpgEncryptPlugin from 'main';
+import { utf8ToBase64 } from "./openpgp";
 
 // Enum to identify encrypt modal mode
 export enum EncryptModalMode {
@@ -54,6 +55,32 @@ export class EncryptModal extends Modal {
             new Notice('❌ Open a file to encrypt');
             // Close this modal
             this.close();
+        }
+        // For openpgpjs, use the single configured key with a simplified UI
+        if (this.plugin.settings.pgpLibrary === "openpgpjs") {
+            // Require a configured public key
+            if (!this.plugin.settings.pgpPublicKeyArmored || this.plugin.settings.pgpPublicKeyArmored.trim() === "") {
+                contentEl.createEl("p", { text: "❌ No public key configured. Go to plugin settings and paste your GPG public key." });
+                return;
+            }
+            // Show which key will be used
+            let openpgpKeys = await getListPublicKey(this.plugin.settings);
+            if (openpgpKeys.length > 0) {
+                contentEl.createEl("p", { text: "Encrypting with key: " + openpgpKeys[0].userID + " (" + openpgpKeys[0].keyID + ")" });
+            }
+            // The configured key is always used as recipient
+            this.listPublicKeyToEncrypt = ["configured-key"];
+            // Note and button text depending on sign setting
+            let openpgpSignNote = this.plugin.settings.pgpSignPublicKeyId !== "0" ? "Text will also be signed with your private key." : "";
+            let openpgpButtonName = this.plugin.settings.pgpSignPublicKeyId !== "0" ? "Sign & Encrypt" : "Encrypt";
+            new Setting(contentEl).setDesc(openpgpSignNote).addButton((btn) => btn.setButtonText(openpgpButtonName).setCta().onClick(async() => {
+                btn.setIcon("loader");
+                btn.setDisabled(true);
+                await this.EncryptText();
+                btn.setDisabled(false);
+                btn.setButtonText(openpgpButtonName);
+            }));
+            return;
         }
         // Help text is created to select GPG keys
         contentEl.createEl("p", { text: "Select which Public GPG key(s) you want to be able to decrypt the text:" });
@@ -137,7 +164,7 @@ export class EncryptModal extends Modal {
             // In case of no error happend
             else {
                 // Replace encrypted text in selection
-                this.editor.replaceSelection(this.BufferToSecretBase64(encryptedTextResult.result!));
+                this.editor.replaceSelection(this.ToSecretBase64(encryptedTextResult.result!));
                 // Close this modal
                 this.close();
             }
@@ -149,7 +176,7 @@ export class EncryptModal extends Modal {
             // Check if result contains data
             if (encryptedTextResult.result) {
                 // Replace encrypted text in selection
-                this.editor.setValue(this.BufferToSecretBase64(encryptedTextResult.result));
+                this.editor.setValue(this.ToSecretBase64(encryptedTextResult.result));
                 // Close this modal
                 this.close();
             }
@@ -161,9 +188,11 @@ export class EncryptModal extends Modal {
         }
     }
 
-    // Convert Buffer to text in Base64 with some scape characters to be identify in LivePreview
-    private BufferToSecretBase64(bufferEncrypted: Buffer): string {
-        // Return buffer converted in Base64 with some scape characters to be identify in LivePreview
-        return "`" + GPG_INLINE_ENCRYPT_PREFIX + " " + bufferEncrypted.toString('base64') + "`";
+    // Convert the encrypted result to Base64 with some scape characters to be identify in LivePreview
+    private ToSecretBase64(encrypted: Buffer | string): string {
+        // Native GPG returns a Buffer; openpgpjs returns an armored string (encode browser-safe)
+        const base64: string = typeof encrypted === "string" ? utf8ToBase64(encrypted) : encrypted.toString('base64');
+        // Return encoded text with some scape characters to be identify in LivePreview
+        return "`" + GPG_INLINE_ENCRYPT_PREFIX + " " + base64 + "`";
     }
 }

@@ -2,6 +2,8 @@ import { App, Modal, Notice, Setting } from "obsidian";
 import { GPG_INLINE_ENCRYPT_PREFIX } from "./EncryptModal";
 import { DecryptModal } from "./DecryptModal";
 import { GpgResult, gpgDecrypt } from "./gpg";
+import { base64ToUtf8, getPassphrase, setCachedPassphrase } from "./openpgp";
+import { PassphraseModal } from "./PassphraseModal";
 import GpgEncryptPlugin from "main";
 
 // Decrypt Preview modal (Works for inline and document encryption)
@@ -19,10 +21,12 @@ export class DecryptPreviewModal extends Modal {
         let encryptedMessageBase64WithoutScapeKeys = encryptedMessageBase64.substring(GPG_INLINE_ENCRYPT_PREFIX.length + 1, encryptedMessageBase64.length);
         // Assing encryptedMessageBase64WithoutScapeKeys to encryptedMessageBase64
         this.encryptedMessageBase64 = encryptedMessageBase64WithoutScapeKeys;
-        // Create a buffer from the string
-        let bufferObj = Buffer.from(encryptedMessageBase64WithoutScapeKeys, "base64");
-        // Encode the Buffer as a utf8 string
-        this.encryptedMessage = bufferObj.toString("utf8");
+        // Decode base64 to the armored message (browser-safe for openpgpjs/mobile, Buffer for native)
+        if (plugin.settings.pgpLibrary === "openpgpjs") {
+            this.encryptedMessage = base64ToUtf8(encryptedMessageBase64WithoutScapeKeys);
+        } else {
+            this.encryptedMessage = Buffer.from(encryptedMessageBase64WithoutScapeKeys, "base64").toString("utf8");
+        }
 	}
 
     // OnOpen Method
@@ -81,10 +85,31 @@ export class DecryptPreviewModal extends Modal {
             btn.setIcon("loader")
             // Disable button before encryption
             btn.setDisabled(true);
+            // For openpgpjs, obtain the passphrase (from cache/settings, or prompt the user)
+            let passphrase: string | null = null;
+            let closedForPrompt: boolean = false;
+            if (this.plugin.settings.pgpLibrary === "openpgpjs") {
+                passphrase = getPassphrase(this.plugin.settings);
+                // If no passphrase is available, close this modal and prompt for one
+                if (!passphrase) {
+                    this.close();
+                    closedForPrompt = true;
+                    passphrase = await PassphraseModal.prompt(this.app);
+                    // If the user cancelled, abort
+                    if (!passphrase) {
+                        return;
+                    }
+                }
+            }
             // Send Decrypt command
-            let decryptedTextResult: GpgResult = await gpgDecrypt(this.plugin.settings, this.encryptedMessage);
+            let decryptedTextResult: GpgResult = await gpgDecrypt(this.plugin.settings, this.encryptedMessage, passphrase);
             // Check if result contains data
             if (decryptedTextResult.result) {
+                // Cache the passphrase after a successful decrypt (openpgpjs only)
+                if (this.plugin.settings.pgpLibrary === "openpgpjs" && passphrase) {
+                    const cacheMs: number = (this.plugin.settings.pgpPassphraseCacheMinutes || 5) * 60 * 1000;
+                    setCachedPassphrase(passphrase, cacheMs);
+                }
                 // Extra info in decrypt process
                 let extraInfo: string = "";
                 // In case of any error happend
@@ -94,18 +119,26 @@ export class DecryptPreviewModal extends Modal {
                 }
                 // Open a new decrypt modal with plain text
                 new DecryptModal(this.app, decryptedTextResult.result.toString().trim(), extraInfo, this.plugin, this.from, this.to).open();
-                // Close this modal
-                this.close();
+                // Close this modal (unless it was already closed for the passphrase prompt)
+                if (!closedForPrompt) {
+                    this.close();
+                }
             }
             // In case of any error happend
             else if (decryptedTextResult.error) {
                 // Show the error message
                 new Notice(decryptedTextResult.error.message);
+                // Reopen the preview if it was closed for the passphrase prompt
+                if (closedForPrompt) {
+                    this.open();
+                }
             }
-            // Enable button after encryption
-            btn.setDisabled(false);
-            // Change loader icon by text
-            btn.setButtonText(buttonName)
+            // Enable button after encryption (only if the modal is still open)
+            if (!closedForPrompt) {
+                btn.setDisabled(false);
+                // Change loader icon by text
+                btn.setButtonText(buttonName)
+            }
         }));
     }
 

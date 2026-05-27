@@ -45,3 +45,8 @@
     padding: 20px;
     font-size: 0.7em;
 }
+.gpg-key-textarea {
+    width: 100%;
+    font-family: monospace;
+    font-size: 11px;
+}

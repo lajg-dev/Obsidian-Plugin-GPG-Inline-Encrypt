@@ -22,6 +22,23 @@ Now in the settings you will find the following elements to configure:
 
 ![Configure plugin](img/Screenshot_02.png)
 
+## OpenPGP.js library (desktop and mobile)
+
+The **GPG Library** setting lets you choose how encryption is performed:
+
+- **CLI commands** — the default behaviour described above: encryption is delegated to the native GPG executable installed on your system. Works with the OS keychain and security keys such as YubiKey. Desktop only.
+- **openpgpjs** — encryption is performed in-app by [OpenPGP.js](https://openpgpjs.org/), with no native GPG executable required. This works on **desktop and mobile (Android/iOS)**.
+
+When `openpgpjs` is selected, the settings show:
+
+1. **Public Key (Armored)** — paste your ASCII-armored public key (used for encryption).
+2. **Private Key (Armored)** — paste your ASCII-armored private key (used for decryption, stored in the plugin's local data).
+3. **Private Key Passphrase (optional)** — leave blank to be prompted for the passphrase at decrypt time (recommended); or save it to be decrypted automatically.
+4. **Passphrase cache duration (minutes)** — how long an entered passphrase is kept in memory before being required again.
+5. **Sign when encrypting** — also sign the text with your private key.
+
+> Note: in `openpgpjs` mode the private key is stored in the plugin's local data (`data.json`). Only enable the saved passphrase if you understand that it is written to disk in plain text.
+
 ## Encrypt some text
 
 Step 1 - In a note you have, select the text you want to encrypt (For inline encryption) and open the command palette
