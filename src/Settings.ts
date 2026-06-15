@@ -2,7 +2,7 @@ import GpgEncryptPlugin from "main";
 
 // Settings object
 export interface GpgEncryptSettings {
-	pgpExecPath: string;
+	pgpExecPaths: string[];
 	pgpSignPublicKeyId: string
     pgpAlwaysTrust: boolean,
     pgpDefaultEncryptKeys: Array<string>,
@@ -20,7 +20,7 @@ export interface GpgEncryptSettings {
 
 // Default settings values
 const DEFAULT_SETTINGS: GpgEncryptSettings = {
-    pgpExecPath: getDefaultExecPath(),
+    pgpExecPaths: getDefaultExecPaths(),
     pgpSignPublicKeyId: "0",
     pgpAlwaysTrust: false,
     pgpDefaultEncryptKeys: [],
@@ -49,34 +49,78 @@ export class Settings {
 
     // Load Settings from Plugin Data
     async loadSettings() {
-        this.plugin.settings = Object.assign({}, DEFAULT_SETTINGS, await this.plugin.loadData());
+        const loadedData = await this.plugin.loadData();
+        this.plugin.settings = Object.assign({}, DEFAULT_SETTINGS, loadedData);
+        
+        // Migration: convert old single pgpExecPath to pgpExecPaths array
+        if (loadedData && 'pgpExecPath' in loadedData && typeof loadedData.pgpExecPath === 'string') {
+            if (loadedData.pgpExecPath) {
+                // If old path exists, put it first in array, then add defaults
+                this.plugin.settings.pgpExecPaths = [loadedData.pgpExecPath, ...getDefaultExecPaths().filter(p => p !== loadedData.pgpExecPath)];
+            } else {
+                // If old path was empty, just use defaults
+                this.plugin.settings.pgpExecPaths = getDefaultExecPaths();
+            }
+            // Save migrated settings
+            await this.saveSettings();
+        }
     }
 
     // Save Settings to Plugin Data
     async saveSettings() {
         await this.plugin.saveData(this.plugin.settings);
     }
+
+    // Get the first working GPG executable path from the list
+    async getWorkingGpgPath(): Promise<string | null> {
+        // Lazy require so it works on mobile
+        if (typeof process === "undefined" || !process.platform) {
+            return null;
+        }
+        
+        const fs = require('fs');
+        
+        // Try each path in order
+        for (const path of this.plugin.settings.pgpExecPaths) {
+            if (!path) continue;
+            
+            try {
+                // Check if file exists and is a gpg executable
+                if (fs.existsSync(path) && 
+                    (path.endsWith("gpg") || path.endsWith("gpg.exe") || 
+                     path.endsWith("gpg2") || path.endsWith("gpg2.exe"))) {
+                    return path;
+                }
+            } catch (ex) {
+                // Continue to next path
+                continue;
+            }
+        }
+        
+        return null;
+    }
 }
 
-// Get Default Exec Path in base on platform name
-function getDefaultExecPath(): string {
+// Get Default Exec Paths for all platforms
+function getDefaultExecPaths(): string[] {
     // On mobile there is no Node process; return empty (native GPG is unavailable there)
     if (typeof process === "undefined" || !process.platform) {
-        return "";
+        return [];
     }
-    // Check platform name
-    switch (process.platform) {
-        // In case of Windows OS
-        case "win32":
-            return "C:\\Program Files (x86)\\GnuPG\\bin\\gpg.exe";
-        // In case of MacOS
-        case "darwin":
-            return "/usr/local/bin/gpg";
-        // In case of Linux
-        case "linux":
-            return "/usr/bin/gpg";
-        // In default value return empty
-        default:
-            return "";
-    }
+    // Return common paths for all platforms so config works cross-platform
+    return [
+        // Windows paths
+        "C:\\Program Files (x86)\\GnuPG\\bin\\gpg.exe",
+        "C:\\Program Files\\GnuPG\\bin\\gpg.exe",
+        // macOS paths
+        "/usr/local/bin/gpg",
+        "/opt/homebrew/bin/gpg",
+        "/usr/local/MacGPG2/bin/gpg",
+        "/usr/local/MacGPG2/bin/gpg2",
+        // Linux paths
+        "/usr/bin/gpg",
+        "/usr/bin/gpg2",
+        "/bin/gpg",
+        "/bin/gpg2"
+    ];
 }

@@ -1,8 +1,13 @@
-import { GpgEncryptSettings } from "./Settings";
+import { GpgEncryptSettings, Settings } from "./Settings";
 import * as openpgpBackend from "./openpgp";
+import GpgEncryptPlugin from "main";
 
 // Default and Global Args
 const globalArgs: string[] = ["--batch"];
+
+// Cache for working GPG path to avoid repeated lookups
+let cachedWorkingPath: string | null = null;
+let cachedPlugin: GpgEncryptPlugin | null = null;
 
 // Object that is returned when spawnGPG method is called
 export interface GpgResult {
@@ -23,12 +28,42 @@ function AditionalArgs(settings: GpgEncryptSettings): string[] {
   return aditionalArgs;
 }
 
+// Function to get working GPG path from settings (with caching)
+async function getWorkingGpgPath(plugin: GpgEncryptPlugin): Promise<string | null> {
+  // Return cached path if available and plugin hasn't changed
+  if (cachedWorkingPath && cachedPlugin === plugin) {
+    return cachedWorkingPath;
+  }
+  
+  // Get working path from settings
+  cachedWorkingPath = await new Settings(plugin).getWorkingGpgPath();
+  cachedPlugin = plugin;
+  
+  return cachedWorkingPath;
+}
+
+// Function to clear cached working path (useful when settings change)
+export function clearWorkingPathCache() {
+  cachedWorkingPath = null;
+  cachedPlugin = null;
+}
+
 // Function to execute GPG command with some arguments and input text
-export default function spawnGPG(settings: GpgEncryptSettings,  input: string | Buffer | null, args?: string[]): Promise<GpgResult> {
+export default async function spawnGPG(plugin: GpgEncryptPlugin, settings: GpgEncryptSettings, input: string | Buffer | null, args?: string[]): Promise<GpgResult> {
     // New Promise to resolve when GPG command is executed
-    return new Promise((resolve) => {
+    return new Promise(async (resolve) => {
       // Try to catch all exceptions
       try {
+        // Get working GPG path
+        const workingPath = await getWorkingGpgPath(plugin);
+        if (!workingPath) {
+          resolve({
+            result: undefined,
+            error: new Error("❌ No working GPG executable found in configured paths")
+          });
+          return;
+        }
+
         // In case of args are null
         if (!args) {
           // Create an empty args array
@@ -45,7 +80,7 @@ export default function spawnGPG(settings: GpgEncryptSettings,  input: string | 
         if (settings.pgpAditionalCommands && settings.pgpAditionalCommandsBefore !== '') {
           command = settings.pgpAditionalCommandsBefore + " && ";
         }
-        command += "\"" + settings.pgpExecPath + "\"";
+        command += "\"" + workingPath + "\"";
         fullArgs.forEach(arg => {
           command += " " + arg;
         });
@@ -108,19 +143,19 @@ export default function spawnGPG(settings: GpgEncryptSettings,  input: string | 
 }
 
 // Get list of all Public Key availables (routes to the selected library)
-export async function getListPublicKey(settings: GpgEncryptSettings): Promise<{ keyID: string; userID: string }[]> {
+export async function getListPublicKey(plugin: GpgEncryptPlugin, settings: GpgEncryptSettings): Promise<{ keyID: string; userID: string }[]> {
   // When openpgpjs is selected, use the OpenPGP.js backend
   if (settings.pgpLibrary === "openpgpjs") {
     return openpgpBackend.getListPublicKey(settings);
   }
   // Otherwise use the native GPG executable
-  return nativeGetListPublicKey(settings);
+  return nativeGetListPublicKey(plugin, settings);
 }
 
 // Get list of all Public Key availables using the native GPG executable
-async function nativeGetListPublicKey(settings: GpgEncryptSettings): Promise<{ keyID: string; userID: string }[]> {
+async function nativeGetListPublicKey(plugin: GpgEncryptPlugin, settings: GpgEncryptSettings): Promise<{ keyID: string; userID: string }[]> {
   // Build the executable and args
-  const gpgResult: GpgResult  = await spawnGPG(settings, null, ["--logger-fd", "1", "--list-public-keys", "--with-colons"]);
+  const gpgResult: GpgResult  = await spawnGPG(plugin, settings, null, ["--logger-fd", "1", "--list-public-keys", "--with-colons"]);
   // Check if result are null
   if(!gpgResult.result) {
     // And return a null array
@@ -154,17 +189,17 @@ async function nativeGetListPublicKey(settings: GpgEncryptSettings): Promise<{ k
 }
 
 // Function to encrypt a plainText with a list of GPG public keys ID (routes to the selected library)
-export async function gpgEncrypt(settings: GpgEncryptSettings, plainText:string, publicKeyIds: string[], signPublicKeyId: string, passphrase?: string | null): Promise<GpgResult> {
+export async function gpgEncrypt(plugin: GpgEncryptPlugin, settings: GpgEncryptSettings, plainText:string, publicKeyIds: string[], signPublicKeyId: string, passphrase?: string | null): Promise<GpgResult> {
   // When openpgpjs is selected, use the OpenPGP.js backend
   if (settings.pgpLibrary === "openpgpjs") {
     return openpgpBackend.gpgEncrypt(settings, plainText, publicKeyIds, signPublicKeyId, passphrase);
   }
   // Otherwise use the native GPG executable
-  return nativeGpgEncrypt(settings, plainText, publicKeyIds, signPublicKeyId);
+  return nativeGpgEncrypt(plugin, settings, plainText, publicKeyIds, signPublicKeyId);
 }
 
 // Function to encrypt a plainText using the native GPG executable
-async function nativeGpgEncrypt(settings: GpgEncryptSettings, plainText:string, publicKeyIds: string[], signPublicKeyId: string): Promise<GpgResult> {
+async function nativeGpgEncrypt(plugin: GpgEncryptPlugin, settings: GpgEncryptSettings, plainText:string, publicKeyIds: string[], signPublicKeyId: string): Promise<GpgResult> {
   // Check if at least one public key is selected
   if (publicKeyIds.length <= 0) {
     // And return with error message
@@ -186,7 +221,7 @@ async function nativeGpgEncrypt(settings: GpgEncryptSettings, plainText:string, 
     args = args.concat(["--recipient", publicKey]);
   });
   // Build the executable and args
-  const gpgResult: GpgResult = await spawnGPG(settings, plainText, args);
+  const gpgResult: GpgResult = await spawnGPG(plugin, settings, plainText, args);
   // Check if error is null
   if(gpgResult.error) {
     // Return with error message
@@ -209,21 +244,21 @@ async function nativeGpgEncrypt(settings: GpgEncryptSettings, plainText:string, 
 
 
 // Function to decrypt an encrypted text with a private key (routes to the selected library)
-export async function gpgDecrypt(settings: GpgEncryptSettings, encryptedText:string, passphrase?: string | null): Promise<GpgResult> {
+export async function gpgDecrypt(plugin: GpgEncryptPlugin, settings: GpgEncryptSettings, encryptedText:string, passphrase?: string | null): Promise<GpgResult> {
   // When openpgpjs is selected, use the OpenPGP.js backend
   if (settings.pgpLibrary === "openpgpjs") {
     return openpgpBackend.gpgDecrypt(settings, encryptedText, passphrase);
   }
   // Otherwise use the native GPG executable
-  return nativeGpgDecrypt(settings, encryptedText);
+  return nativeGpgDecrypt(plugin, settings, encryptedText);
 }
 
 // Function to decrypt an encrypted text using the native GPG executable
-async function nativeGpgDecrypt(settings: GpgEncryptSettings, encryptedText:string): Promise<GpgResult> {
+async function nativeGpgDecrypt(plugin: GpgEncryptPlugin, settings: GpgEncryptSettings, encryptedText:string): Promise<GpgResult> {
   // List of Args before publicKeyIds
   let args: string[] = ["--decrypt"].concat(AditionalArgs(settings));
   // Build the executable and args
-  const gpgResult: GpgResult = await spawnGPG(settings, encryptedText, args);
+  const gpgResult: GpgResult = await spawnGPG(plugin, settings, encryptedText, args);
   // Check if error is null
   if(gpgResult.error) {
     // Return with error message
