@@ -102,7 +102,7 @@ export class DecryptPreviewModal extends Modal {
                 }
             }
             // Send Decrypt command
-            let decryptedTextResult: GpgResult = await gpgDecrypt(this.plugin.settings, this.encryptedMessage, passphrase);
+            let decryptedTextResult: GpgResult = await gpgDecrypt(this.plugin, this.plugin.settings, this.encryptedMessage, passphrase);
             // Check if result contains data
             if (decryptedTextResult.result) {
                 // Cache the passphrase after a successful decrypt (openpgpjs only)

@@ -50,3 +50,9 @@
     font-family: monospace;
     font-size: 11px;
 }
+.gpg-paths-list {
+    margin-top: 10px;
+}
+.gpg-path-item {
+    margin-bottom: 8px;
+}
